@@ -1,4 +1,4 @@
-import { Megaphone, GitBranch, Zap, MessagesSquare, Inbox, Boxes, Code2, Truck, Sparkles, LayoutDashboard, Users } from "lucide-react";
+import { Megaphone, MessagesSquare, Inbox, Boxes, Code2, Truck, Sparkles, LayoutDashboard, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -9,8 +9,6 @@ import { ShieldCheck } from "lucide-react";
 const phase1 = [
   { title: "Overview", url: "/", icon: LayoutDashboard },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
-  { title: "Sequences", url: "/sequences", icon: GitBranch },
-  { title: "Triggers", url: "/triggers", icon: Zap },
   { title: "Contacts", url: "/contacts", icon: Users },
 ];
 const phase2 = [
@@ -74,10 +72,10 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        <Section label="Phase 1 · Messaging" items={phase1} />
-        <Section label="Phase 2 · Conversations" items={phase2} />
-        <Section label="Phase 3 · Ecosystem" items={phase3} />
-        <Section label="Phase 4 · Future" items={phase4} />
+        <Section label="Messaging" items={phase1} />
+        <Section label="Conversations" items={phase2} />
+        <Section label="Ecosystem" items={phase3} />
+        <Section label="Future" items={phase4} />
       </SidebarContent>
       <SidebarFooter className="p-3">
         {!collapsed && (

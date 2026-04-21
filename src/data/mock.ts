@@ -7,11 +7,16 @@ export const business = {
   totalCustomers: 3186,
 };
 
-export type CampaignStatus = "draft" | "scheduled" | "sending" | "completed" | "paused";
+export type CampaignStatus = "draft" | "scheduled" | "sending" | "completed" | "paused" | "live";
+// Unified campaign model. A "campaign" is one message OR a sequence OR a triggered automation.
+// What differs is only HOW it starts and WHETHER it has follow-ups.
+export type CampaignKind = "one-time" | "sequence" | "triggered";
 export interface Campaign {
   id: string;
   name: string;
-  type: "broadcast" | "sequence";
+  type: "broadcast" | "sequence";   // legacy — kept for back-compat
+  kind: CampaignKind;                // new unified field
+  startCondition: string;            // human readable: "Send now", "Scheduled Sat 10:00", "On: Cart abandoned 1h"
   status: CampaignStatus;
   audience: string;
   reach: number;
