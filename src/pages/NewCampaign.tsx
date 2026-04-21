@@ -117,6 +117,16 @@ const NewCampaign = () => {
   const preview = message.replace(/\{\{customer_name\}\}/g, "Adaeze").replace(/\{\{business_name\}\}/g, business.name);
   const event = eventCatalog.find(e => e.key === eventKey)!;
 
+  const applyTemplate = (t: Template) => {
+    setKind(t.kind);
+    setName(t.name);
+    setMessage(t.message);
+    if (t.eventKey) setEventKey(t.eventKey);
+    if (t.steps) setSteps(t.steps);
+    if (t.startMode) setStartMode(t.startMode);
+    setStep(2);
+  };
+
   const handleSend = () => {
     const verb = kind === "triggered" ? "activated" : kind === "sequence" ? "scheduled" : startMode === "now" ? "queued" : "scheduled";
     toast.success(`Campaign ${verb}${kind === "triggered" ? "" : ` for ${reach.toLocaleString()} contacts`}`);
