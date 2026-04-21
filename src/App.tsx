@@ -7,8 +7,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Campaigns from "./pages/Campaigns";
 import NewCampaign from "./pages/NewCampaign";
-import Sequences from "./pages/Sequences";
-import Triggers from "./pages/Triggers";
 import Contacts from "./pages/Contacts";
 import Flows from "./pages/Flows";
 import Inbox from "./pages/Inbox";
@@ -29,8 +27,6 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/campaigns" element={<Campaigns />} />
           <Route path="/campaigns/new" element={<NewCampaign />} />
-          <Route path="/sequences" element={<Sequences />} />
-          <Route path="/triggers" element={<Triggers />} />
           <Route path="/contacts" element={<Contacts />} />
           <Route path="/flows" element={<Flows />} />
           <Route path="/inbox" element={<Inbox />} />

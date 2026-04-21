@@ -7,11 +7,16 @@ export const business = {
   totalCustomers: 3186,
 };
 
-export type CampaignStatus = "draft" | "scheduled" | "sending" | "completed" | "paused";
+export type CampaignStatus = "draft" | "scheduled" | "sending" | "completed" | "paused" | "live";
+// Unified campaign model. A "campaign" is one message OR a sequence OR a triggered automation.
+// What differs is only HOW it starts and WHETHER it has follow-ups.
+export type CampaignKind = "one-time" | "sequence" | "triggered";
 export interface Campaign {
   id: string;
   name: string;
-  type: "broadcast" | "sequence";
+  type: "broadcast" | "sequence";   // legacy — kept for back-compat
+  kind: CampaignKind;                // new unified field
+  startCondition: string;            // human readable: "Send now", "Scheduled Sat 10:00", "On: Cart abandoned 1h"
   status: CampaignStatus;
   audience: string;
   reach: number;
@@ -28,12 +33,16 @@ export interface Campaign {
 }
 
 export const campaigns: Campaign[] = [
-  { id: "c1", name: "Weekend menu launch", type: "broadcast", status: "completed", audience: "All opted-in", reach: 1240, sent: 1240, delivered: 1218, read: 982, replied: 184, orders: 96, optedOut: 4, preview: "Hi {{customer_name}}! Big news — we have a new menu at Mama's Kitchen this weekend.", updatedAt: "2h ago" },
-  { id: "c2", name: "Lunch hour flash promo", type: "broadcast", status: "scheduled", audience: "Lagos · Last 30 days", reach: 412, sent: 0, delivered: 0, read: 0, replied: 0, orders: 0, optedOut: 0, scheduledFor: "Today, 12:00", preview: "Beat the queue 🍛 — order in the next hour and skip the wait.", updatedAt: "10m ago" },
-  { id: "c3", name: "New jollof drop — sequence", type: "sequence", status: "sending", audience: "Repeat buyers", reach: 684, sent: 684, delivered: 671, read: 540, replied: 92, orders: 71, optedOut: 2, steps: 3, preview: "Day 0 launch · Day 2 follow-up · Day 5 final w/ 10% off", updatedAt: "Step 2 of 3" },
-  { id: "c4", name: "Win-back: 60 day inactive", type: "sequence", status: "sending", audience: "No order in 60d", reach: 318, sent: 318, delivered: 311, read: 220, replied: 38, orders: 21, optedOut: 6, steps: 3, preview: "We miss you · Day 3 nudge · Day 7 last call", updatedAt: "Step 1 of 3" },
-  { id: "c5", name: "Father's Day pre-order", type: "broadcast", status: "draft", audience: "—", reach: 0, sent: 0, delivered: 0, read: 0, replied: 0, orders: 0, optedOut: 0, preview: "Treat dad this Sunday — pre-order before Friday.", updatedAt: "Yesterday" },
-  { id: "c6", name: "Q1 satisfaction NPS", type: "broadcast", status: "paused", audience: "Last 90 days buyers", reach: 822, sent: 410, delivered: 402, read: 318, replied: 64, orders: 0, optedOut: 3, preview: "Quick favour — how was your last order? Reply 1–5.", updatedAt: "3d ago" },
+  { id: "c1", name: "Weekend menu launch", type: "broadcast", kind: "one-time", startCondition: "Sent now", status: "completed", audience: "All opted-in", reach: 1240, sent: 1240, delivered: 1218, read: 982, replied: 184, orders: 96, optedOut: 4, preview: "Hi {{customer_name}}! Big news — we have a new menu at Mama's Kitchen this weekend.", updatedAt: "2h ago" },
+  { id: "c2", name: "Lunch hour flash promo", type: "broadcast", kind: "one-time", startCondition: "Scheduled · Today 12:00", status: "scheduled", audience: "Lagos · Last 30 days", reach: 412, sent: 0, delivered: 0, read: 0, replied: 0, orders: 0, optedOut: 0, scheduledFor: "Today, 12:00", preview: "Beat the queue 🍛 — order in the next hour and skip the wait.", updatedAt: "10m ago" },
+  { id: "c3", name: "New jollof drop", type: "sequence", kind: "sequence", startCondition: "Manual · 3-step sequence", status: "sending", audience: "Repeat buyers", reach: 684, sent: 684, delivered: 671, read: 540, replied: 92, orders: 71, optedOut: 2, steps: 3, preview: "Day 0 launch · Day 2 follow-up · Day 5 final w/ 10% off", updatedAt: "Step 2 of 3" },
+  { id: "c4", name: "Win-back · 60 day inactive", type: "sequence", kind: "sequence", startCondition: "Manual · 3-step sequence", status: "sending", audience: "No order in 60d", reach: 318, sent: 318, delivered: 311, read: 220, replied: 38, orders: 21, optedOut: 6, steps: 3, preview: "We miss you · Day 3 nudge · Day 7 last call", updatedAt: "Step 1 of 3" },
+  { id: "c5", name: "Father's Day pre-order", type: "broadcast", kind: "one-time", startCondition: "Draft", status: "draft", audience: "—", reach: 0, sent: 0, delivered: 0, read: 0, replied: 0, orders: 0, optedOut: 0, preview: "Treat dad this Sunday — pre-order before Friday.", updatedAt: "Yesterday" },
+  { id: "c6", name: "Q1 satisfaction NPS", type: "broadcast", kind: "one-time", startCondition: "Sent now", status: "paused", audience: "Last 90 days buyers", reach: 822, sent: 410, delivered: 402, read: 318, replied: 64, orders: 0, optedOut: 3, preview: "Quick favour — how was your last order? Reply 1–5.", updatedAt: "3d ago" },
+  { id: "c7", name: "Order confirmation", type: "broadcast", kind: "triggered", startCondition: "On: Order placed · Immediate", status: "live", audience: "Every customer who orders", reach: 1284, sent: 1284, delivered: 1271, read: 1190, replied: 12, orders: 0, optedOut: 1, preview: "Order #{{order_id}} confirmed — ETA 35 mins.", updatedAt: "Always on" },
+  { id: "c8", name: "Abandoned cart recovery", type: "broadcast", kind: "triggered", startCondition: "On: Cart inactive 1h", status: "live", audience: "Cart abandoners", reach: 268, sent: 268, delivered: 264, read: 198, replied: 22, orders: 59, optedOut: 1, preview: "You left items in your cart 🛒 Tap to finish your order.", updatedAt: "Always on" },
+  { id: "c9", name: "Satisfaction rating", type: "broadcast", kind: "triggered", startCondition: "On: Order delivered · 3h", status: "live", audience: "Delivered customers", reach: 1102, sent: 1102, delivered: 1090, read: 902, replied: 706, orders: 0, optedOut: 2, preview: "How was your order? Reply 1–5 ⭐", updatedAt: "Always on" },
+  { id: "c10", name: "Welcome message", type: "broadcast", kind: "triggered", startCondition: "On: First message", status: "live", audience: "New contacts", reach: 412, sent: 412, delivered: 408, read: 388, replied: 156, orders: 38, optedOut: 0, preview: "Welcome to Mama's Kitchen 👋 Reply MENU to see today's specials.", updatedAt: "Always on" },
 ];
 
 export interface TriggerAutomation {

@@ -8,6 +8,7 @@ const styles: Record<string, string> = {
   sending: "bg-primary/10 text-primary border-primary/20",
   draft: "bg-muted text-muted-foreground border-border",
   paused: "bg-warning/10 text-warning border-warning/20",
+  live: "bg-success/10 text-success border-success/20",
   bot: "bg-info/10 text-info border-info/20",
   agent: "bg-primary/10 text-primary border-primary/20",
   queued: "bg-warning/10 text-warning border-warning/20",
