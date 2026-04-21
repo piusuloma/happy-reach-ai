@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { triggers } from "@/data/mock";
 import { Zap, ShieldCheck, Sparkles, Pencil } from "lucide-react";
 import { useState } from "react";
-import { ShoppingCart, Bell, Star, Clock, UserPlus, Heart, TrendingDown } from "lucide-react";
+import { ShoppingCart, Star, Clock, UserPlus, Heart, TrendingDown } from "lucide-react";
 
 const iconFor: Record<string, any> = {
   welcome: UserPlus, order_confirmation: ShoppingCart, abandoned_cart: ShoppingCart,
