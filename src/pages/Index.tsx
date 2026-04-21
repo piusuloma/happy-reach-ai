@@ -21,7 +21,7 @@ const Index = () => {
         subtitle={`Verified WhatsApp messaging on top of ${business.name} · the right message to the right customer at the right moment.`}
         actions={
           <>
-            <Button variant="outline" asChild className="rounded-xl"><Link to="/triggers"><Zap className="h-4 w-4 mr-1.5" />Triggers</Link></Button>
+            <Button variant="outline" asChild className="rounded-xl"><Link to="/campaigns"><Megaphone className="h-4 w-4 mr-1.5" />All campaigns</Link></Button>
             <Button asChild className="rounded-xl grad-primary text-primary-foreground border-0 shadow-[var(--shadow-glow)]">
               <Link to="/campaigns/new"><Megaphone className="h-4 w-4 mr-1.5" />New campaign</Link>
             </Button>
@@ -75,10 +75,10 @@ const Index = () => {
         <div className="surface-card p-6">
           <h3 className="font-display text-lg font-bold mb-4">Engine status</h3>
           <ul className="space-y-3 text-sm">
-            <Row icon={Megaphone} label="Active campaigns" value={active} to="/campaigns" />
-            <Row icon={GitBranch} label="Running sequences" value={campaigns.filter(c=>c.type==='sequence' && c.status==='sending').length} to="/sequences" />
-            <Row icon={Zap} label="Live triggers" value={`${enabledTriggers} / ${triggers.length}`} to="/triggers" />
-            <Row icon={Sparkles} label="2-per-24h cap" value="Enforced" to="/triggers" />
+            <Row icon={Megaphone} label="Active one-time" value={campaigns.filter(c => c.kind === 'one-time' && (c.status === 'sending' || c.status === 'scheduled')).length} to="/campaigns" />
+            <Row icon={GitBranch} label="Running sequences" value={campaigns.filter(c => c.kind === 'sequence' && c.status === 'sending').length} to="/campaigns" />
+            <Row icon={Zap} label="Live triggered" value={campaigns.filter(c => c.kind === 'triggered' && c.status === 'live').length} to="/campaigns" />
+            <Row icon={Sparkles} label="2-per-24h cap" value="Enforced" to="/campaigns" />
           </ul>
           <div className="mt-5 rounded-xl bg-accent p-4">
             <div className="text-xs font-semibold text-accent-foreground">Frequency cap protected</div>
