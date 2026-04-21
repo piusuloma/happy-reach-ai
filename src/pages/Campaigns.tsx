@@ -8,12 +8,9 @@ import { campaigns, type CampaignKind } from "@/data/mock";
 import { useState } from "react";
 
 const kindMeta: Record<CampaignKind, { label: string; icon: any; gradient: string; desc: string }> = {
-  "one-time": { label: "One-time", icon: Send, gradient: "grad-primary", desc: "Sent once · now or scheduled" },
-  "sequence": { label: "Sequence", icon: GitBranch, gradient: "grad-violet", desc: "Multi-step · stops on conversion" },
+  "campaign": { label: "Campaign", icon: Send, gradient: "grad-primary", desc: "Manual · send now or schedule" },
   "triggered": { label: "Triggered", icon: Zap, gradient: "grad-orange", desc: "Fires on an event · always on" },
 };
-
-const tabs: ("all" | CampaignKind)[] = ["all", "one-time", "sequence", "triggered"];
 
 const Campaigns = () => {
   const [tab, setTab] = useState<"all" | CampaignKind>("all");
@@ -26,8 +23,7 @@ const Campaigns = () => {
 
   const counts = {
     all: campaigns.length,
-    "one-time": campaigns.filter(c => c.kind === "one-time").length,
-    sequence: campaigns.filter(c => c.kind === "sequence").length,
+    "campaign": campaigns.filter(c => c.kind === "campaign").length,
     triggered: campaigns.filter(c => c.kind === "triggered").length,
   };
 
@@ -35,7 +31,7 @@ const Campaigns = () => {
     <AppLayout>
       <PageHeader
         title="Campaigns"
-        subtitle="Every automated message — one-time broadcasts, multi-step sequences, and event-triggered messages — live in one place."
+        subtitle="Every automated message — manual campaigns and event-triggered messages — in one place."
         actions={
           <Button asChild className="rounded-xl grad-primary text-primary-foreground border-0">
             <Link to="/campaigns/new"><Megaphone className="h-4 w-4 mr-1.5" />New campaign</Link>
@@ -43,10 +39,10 @@ const Campaigns = () => {
         }
       />
 
-      {/* Kind tabs — the new mental model */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      {/* Kind tabs — simplified to two */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <KindTab active={tab === "all"} onClick={() => setTab("all")} title="All campaigns" hint={`${counts.all} total`} icon={Megaphone} gradient="grad-primary" />
-        {(["one-time", "sequence", "triggered"] as CampaignKind[]).map(k => {
+        {(["campaign", "triggered"] as CampaignKind[]).map(k => {
           const m = kindMeta[k];
           return <KindTab key={k} active={tab === k} onClick={() => setTab(k)} title={m.label} hint={`${counts[k]} · ${m.desc}`} icon={m.icon} gradient={m.gradient} />;
         })}
@@ -83,7 +79,11 @@ const Campaigns = () => {
                     <h3 className="font-semibold">{c.name}</h3>
                     <StatusPill status={c.status} />
                     <span className="text-[11px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{m.label}</span>
-                    {c.steps && <span className="text-[11px] bg-accent text-accent-foreground px-2 py-0.5 rounded-full">{c.steps} steps</span>}
+                    {c.steps ? (
+                      <span className="text-[11px] bg-accent text-accent-foreground px-2 py-0.5 rounded-full inline-flex items-center gap-1"><GitBranch className="h-3 w-3" />{c.steps} steps</span>
+                    ) : c.kind === "campaign" && (
+                      <span className="text-[11px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">Single message</span>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{c.preview}</p>
                   <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
