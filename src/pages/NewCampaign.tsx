@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, Image as ImageIcon, Sparkles, Send, Calendar, Users, Eye, Info, GitBranch, Zap, ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, Star, UserPlus, Heart, Clock, TrendingDown } from "lucide-react";
+import { ShieldCheck, Image as ImageIcon, Sparkles, Send, Calendar, Users, Eye, Info, GitBranch, Zap, ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, Star, UserPlus, Heart, Clock, TrendingDown, Megaphone, PartyPopper, Tag, RotateCcw, FileText } from "lucide-react";
 import { useState } from "react";
 import { segments, business, type CampaignKind } from "@/data/mock";
 import { Link, useNavigate } from "react-router-dom";
