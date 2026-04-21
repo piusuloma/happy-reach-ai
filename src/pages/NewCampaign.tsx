@@ -24,6 +24,70 @@ const eventCatalog: { key: EventKey; name: string; desc: string; defaultDelay: s
   { key: "slow_product", name: "Slow product", desc: "Product hasn't sold in 7 days", defaultDelay: "24 hours", icon: TrendingDown, gradient: "grad-teal" },
 ];
 
+interface Template {
+  id: string;
+  name: string;
+  desc: string;
+  icon: any;
+  gradient: string;
+  kind: CampaignKind;
+  message: string;
+  eventKey?: EventKey;
+  steps?: SequenceStep[];
+  startMode?: StartMode;
+}
+
+const templates: Template[] = [
+  {
+    id: "tpl-launch", name: "Menu / product launch", desc: "Announce something new to all opted-in customers.",
+    icon: PartyPopper, gradient: "grad-primary", kind: "one-time", startMode: "now",
+    message: "Hi {{customer_name}}! 🍛 Big news — {{business_name}} just launched a new menu.\n\nFresh dishes from ₦2,500\nOrder now: nativeid.io/mamas-kitchen",
+  },
+  {
+    id: "tpl-flash", name: "Flash promo", desc: "Limited-time offer scheduled for peak hours.",
+    icon: Tag, gradient: "grad-orange", kind: "one-time", startMode: "scheduled",
+    message: "⚡ Flash deal — next 2 hours only.\n15% off everything with code MAMA15.\nTap to order: nativeid.io/mamas-kitchen",
+  },
+  {
+    id: "tpl-winback", name: "Win-back sequence", desc: "3-step nudge for customers who haven't ordered in 60 days.",
+    icon: RotateCcw, gradient: "grad-violet", kind: "sequence",
+    message: "Hi {{customer_name}}, we miss you 💚 It's been a while since your last order at {{business_name}}.",
+    steps: [
+      { delay: "72", message: "Still here for you — here's 10% off your next order with code COMEBACK10." },
+      { delay: "168", message: "Last nudge — code COMEBACK10 expires tonight. Order: nativeid.io/mamas-kitchen" },
+    ],
+  },
+  {
+    id: "tpl-launchseq", name: "Launch sequence", desc: "Day 0 announce → Day 2 reminder → Day 5 final w/ discount.",
+    icon: Megaphone, gradient: "grad-violet", kind: "sequence",
+    message: "Hi {{customer_name}}! New menu drops today at {{business_name}} 🎉 Be the first to try it.",
+    steps: [
+      { delay: "48", message: "Missed our new menu? It's the talk of the town this week." },
+      { delay: "120", message: "Final call — 10% off the new menu with code MAMA10. Ends tonight." },
+    ],
+  },
+  {
+    id: "tpl-cart", name: "Abandoned cart recovery", desc: "Auto-fires 1h after a cart is left.",
+    icon: ShoppingCart, gradient: "grad-orange", kind: "triggered", eventKey: "abandoned_cart",
+    message: "Hi {{customer_name}} — you left items in your cart 🛒\nFinish your order in one tap: nativeid.io/mamas-kitchen",
+  },
+  {
+    id: "tpl-orderconf", name: "Order confirmation", desc: "Sends instantly when an order is placed.",
+    icon: ShoppingCart, gradient: "grad-primary", kind: "triggered", eventKey: "order_placed",
+    message: "✅ Order #{{order_id}} confirmed at {{business_name}}.\nETA: 35 mins. We'll message you when it's on the way.",
+  },
+  {
+    id: "tpl-rating", name: "Satisfaction rating", desc: "Asks for feedback 3h after delivery.",
+    icon: Star, gradient: "grad-sky", kind: "triggered", eventKey: "delivered",
+    message: "How was your order from {{business_name}}? Reply 1–5 ⭐ — it helps us serve you better.",
+  },
+  {
+    id: "tpl-welcome", name: "Welcome message", desc: "Greets every new customer who messages you.",
+    icon: UserPlus, gradient: "grad-emerald", kind: "triggered", eventKey: "welcome",
+    message: "Welcome to {{business_name}} 👋\nReply MENU to see today's specials, or just tell us what you'd like.",
+  },
+];
+
 interface SequenceStep { delay: string; message: string }
 
 const NewCampaign = () => {
