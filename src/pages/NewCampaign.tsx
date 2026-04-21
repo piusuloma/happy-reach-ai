@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, Image as ImageIcon, Sparkles, Send, Calendar, Users, Eye, Info, GitBranch, Zap, ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, Star, UserPlus, Heart, Clock, TrendingDown } from "lucide-react";
+import { ShieldCheck, Image as ImageIcon, Sparkles, Send, Calendar, Users, Eye, Info, GitBranch, Zap, ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, Star, UserPlus, Heart, Clock, TrendingDown, Megaphone, PartyPopper, Tag, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { segments, business, type CampaignKind } from "@/data/mock";
 import { Link, useNavigate } from "react-router-dom";
@@ -22,6 +22,70 @@ const eventCatalog: { key: EventKey; name: string; desc: string; defaultDelay: s
   { key: "offer_expiry", name: "Offer expiring soon", desc: "Customer's active offer expires in 24h", defaultDelay: "Immediate", icon: Clock, gradient: "grad-violet" },
   { key: "comeback", name: "No order in X days", desc: "Win-back trigger after inactivity", defaultDelay: "Daily check", icon: Heart, gradient: "grad-orange" },
   { key: "slow_product", name: "Slow product", desc: "Product hasn't sold in 7 days", defaultDelay: "24 hours", icon: TrendingDown, gradient: "grad-teal" },
+];
+
+interface Template {
+  id: string;
+  name: string;
+  desc: string;
+  icon: any;
+  gradient: string;
+  kind: CampaignKind;
+  message: string;
+  eventKey?: EventKey;
+  steps?: SequenceStep[];
+  startMode?: StartMode;
+}
+
+const templates: Template[] = [
+  {
+    id: "tpl-launch", name: "Menu / product launch", desc: "Announce something new to all opted-in customers.",
+    icon: PartyPopper, gradient: "grad-primary", kind: "one-time", startMode: "now",
+    message: "Hi {{customer_name}}! 🍛 Big news — {{business_name}} just launched a new menu.\n\nFresh dishes from ₦2,500\nOrder now: nativeid.io/mamas-kitchen",
+  },
+  {
+    id: "tpl-flash", name: "Flash promo", desc: "Limited-time offer scheduled for peak hours.",
+    icon: Tag, gradient: "grad-orange", kind: "one-time", startMode: "scheduled",
+    message: "⚡ Flash deal — next 2 hours only.\n15% off everything with code MAMA15.\nTap to order: nativeid.io/mamas-kitchen",
+  },
+  {
+    id: "tpl-winback", name: "Win-back sequence", desc: "3-step nudge for customers who haven't ordered in 60 days.",
+    icon: RotateCcw, gradient: "grad-violet", kind: "sequence",
+    message: "Hi {{customer_name}}, we miss you 💚 It's been a while since your last order at {{business_name}}.",
+    steps: [
+      { delay: "72", message: "Still here for you — here's 10% off your next order with code COMEBACK10." },
+      { delay: "168", message: "Last nudge — code COMEBACK10 expires tonight. Order: nativeid.io/mamas-kitchen" },
+    ],
+  },
+  {
+    id: "tpl-launchseq", name: "Launch sequence", desc: "Day 0 announce → Day 2 reminder → Day 5 final w/ discount.",
+    icon: Megaphone, gradient: "grad-violet", kind: "sequence",
+    message: "Hi {{customer_name}}! New menu drops today at {{business_name}} 🎉 Be the first to try it.",
+    steps: [
+      { delay: "48", message: "Missed our new menu? It's the talk of the town this week." },
+      { delay: "120", message: "Final call — 10% off the new menu with code MAMA10. Ends tonight." },
+    ],
+  },
+  {
+    id: "tpl-cart", name: "Abandoned cart recovery", desc: "Auto-fires 1h after a cart is left.",
+    icon: ShoppingCart, gradient: "grad-orange", kind: "triggered", eventKey: "abandoned_cart",
+    message: "Hi {{customer_name}} — you left items in your cart 🛒\nFinish your order in one tap: nativeid.io/mamas-kitchen",
+  },
+  {
+    id: "tpl-orderconf", name: "Order confirmation", desc: "Sends instantly when an order is placed.",
+    icon: ShoppingCart, gradient: "grad-primary", kind: "triggered", eventKey: "order_placed",
+    message: "✅ Order #{{order_id}} confirmed at {{business_name}}.\nETA: 35 mins. We'll message you when it's on the way.",
+  },
+  {
+    id: "tpl-rating", name: "Satisfaction rating", desc: "Asks for feedback 3h after delivery.",
+    icon: Star, gradient: "grad-sky", kind: "triggered", eventKey: "delivered",
+    message: "How was your order from {{business_name}}? Reply 1–5 ⭐ — it helps us serve you better.",
+  },
+  {
+    id: "tpl-welcome", name: "Welcome message", desc: "Greets every new customer who messages you.",
+    icon: UserPlus, gradient: "grad-emerald", kind: "triggered", eventKey: "welcome",
+    message: "Welcome to {{business_name}} 👋\nReply MENU to see today's specials, or just tell us what you'd like.",
+  },
 ];
 
 interface SequenceStep { delay: string; message: string }
@@ -52,6 +116,16 @@ const NewCampaign = () => {
   const reach = segments.find(s => s.id === segmentId)?.count ?? 0;
   const preview = message.replace(/\{\{customer_name\}\}/g, "Adaeze").replace(/\{\{business_name\}\}/g, business.name);
   const event = eventCatalog.find(e => e.key === eventKey)!;
+
+  const applyTemplate = (t: Template) => {
+    setKind(t.kind);
+    setName(t.name);
+    setMessage(t.message);
+    if (t.eventKey) setEventKey(t.eventKey);
+    if (t.steps) setSteps(t.steps);
+    if (t.startMode) setStartMode(t.startMode);
+    setStep(2);
+  };
 
   const handleSend = () => {
     const verb = kind === "triggered" ? "activated" : kind === "sequence" ? "scheduled" : startMode === "now" ? "queued" : "scheduled";
@@ -90,6 +164,35 @@ const NewCampaign = () => {
             desc="Fires on an event — order placed, cart abandoned, delivered. Always on, no scheduling."
             example="On cart abandoned (1h) → reminder"
           />
+        </div>
+
+        {/* Templates — proven recipes that pre-fill kind, message and follow-ups */}
+        <div className="mt-10 max-w-5xl">
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h3 className="font-display font-bold text-lg">Or start from a template</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Pre-built recipes proven to convert. You can edit everything before sending.</p>
+            </div>
+            <span className="text-[11px] text-muted-foreground">{templates.length} templates</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {templates.map(t => {
+              const Icon = t.icon;
+              const kindBadge = t.kind === "one-time" ? "One-time" : t.kind === "sequence" ? "Sequence" : "Triggered";
+              return (
+                <button key={t.id} onClick={() => applyTemplate(t)}
+                  className="text-left p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all group">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`h-10 w-10 rounded-xl ${t.gradient} text-white flex items-center justify-center`}><Icon className="h-4 w-4" /></div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{kindBadge}</span>
+                  </div>
+                  <div className="font-semibold text-sm leading-snug">{t.name}</div>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">{t.desc}</p>
+                  <div className="text-[11px] text-primary font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Use template →</div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="mt-8 flex items-center justify-between max-w-5xl">
