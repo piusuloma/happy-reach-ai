@@ -166,6 +166,35 @@ const NewCampaign = () => {
           />
         </div>
 
+        {/* Templates — proven recipes that pre-fill kind, message and follow-ups */}
+        <div className="mt-10 max-w-5xl">
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <h3 className="font-display font-bold text-lg">Or start from a template</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Pre-built recipes proven to convert. You can edit everything before sending.</p>
+            </div>
+            <span className="text-[11px] text-muted-foreground">{templates.length} templates</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {templates.map(t => {
+              const Icon = t.icon;
+              const kindBadge = t.kind === "one-time" ? "One-time" : t.kind === "sequence" ? "Sequence" : "Triggered";
+              return (
+                <button key={t.id} onClick={() => applyTemplate(t)}
+                  className="text-left p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all group">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`h-10 w-10 rounded-xl ${t.gradient} text-white flex items-center justify-center`}><Icon className="h-4 w-4" /></div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{kindBadge}</span>
+                  </div>
+                  <div className="font-semibold text-sm leading-snug">{t.name}</div>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">{t.desc}</p>
+                  <div className="text-[11px] text-primary font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Use template →</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="mt-8 flex items-center justify-between max-w-5xl">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-success" />
