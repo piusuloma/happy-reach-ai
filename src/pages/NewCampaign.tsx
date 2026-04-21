@@ -5,13 +5,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, Image as ImageIcon, Sparkles, Send, Calendar, Users, Eye, Info, GitBranch, Zap, ArrowLeft, ArrowRight, Plus, Trash2, ShoppingCart, Star, UserPlus, Heart, Clock, TrendingDown, Megaphone, PartyPopper, Tag, RotateCcw } from "lucide-react";
+import { ShieldCheck, Image as ImageIcon, Sparkles, Send, Calendar, Users, Eye, Info, GitBranch, Zap, ArrowLeft, Plus, Trash2, ShoppingCart, Star, UserPlus, Heart, Clock, TrendingDown, Megaphone, PartyPopper, Tag, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { segments, business, type CampaignKind } from "@/data/mock";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-type StartMode = "now" | "scheduled" | "event";
+type StartMode = "now" | "scheduled";
 type EventKey = "welcome" | "order_placed" | "abandoned_cart" | "delivered" | "offer_expiry" | "comeback" | "slow_product";
 
 const eventCatalog: { key: EventKey; name: string; desc: string; defaultDelay: string; icon: any; gradient: string }[] = [
@@ -23,6 +23,8 @@ const eventCatalog: { key: EventKey; name: string; desc: string; defaultDelay: s
   { key: "comeback", name: "No order in X days", desc: "Win-back trigger after inactivity", defaultDelay: "Daily check", icon: Heart, gradient: "grad-orange" },
   { key: "slow_product", name: "Slow product", desc: "Product hasn't sold in 7 days", defaultDelay: "24 hours", icon: TrendingDown, gradient: "grad-teal" },
 ];
+
+interface SequenceStep { delay: string; message: string }
 
 interface Template {
   id: string;
@@ -39,18 +41,23 @@ interface Template {
 
 const templates: Template[] = [
   {
+    id: "tpl-blank-campaign", name: "Blank campaign", desc: "Start from scratch — write your own message and audience.",
+    icon: Megaphone, gradient: "grad-primary", kind: "campaign", startMode: "now",
+    message: "Hi {{customer_name}}! 👋 …",
+  },
+  {
     id: "tpl-launch", name: "Menu / product launch", desc: "Announce something new to all opted-in customers.",
-    icon: PartyPopper, gradient: "grad-primary", kind: "one-time", startMode: "now",
+    icon: PartyPopper, gradient: "grad-primary", kind: "campaign", startMode: "now",
     message: "Hi {{customer_name}}! 🍛 Big news — {{business_name}} just launched a new menu.\n\nFresh dishes from ₦2,500\nOrder now: nativeid.io/mamas-kitchen",
   },
   {
     id: "tpl-flash", name: "Flash promo", desc: "Limited-time offer scheduled for peak hours.",
-    icon: Tag, gradient: "grad-orange", kind: "one-time", startMode: "scheduled",
+    icon: Tag, gradient: "grad-orange", kind: "campaign", startMode: "scheduled",
     message: "⚡ Flash deal — next 2 hours only.\n15% off everything with code MAMA15.\nTap to order: nativeid.io/mamas-kitchen",
   },
   {
-    id: "tpl-winback", name: "Win-back sequence", desc: "3-step nudge for customers who haven't ordered in 60 days.",
-    icon: RotateCcw, gradient: "grad-violet", kind: "sequence",
+    id: "tpl-winback", name: "Win-back (3 steps)", desc: "Day 0 → Day 3 → Day 7 nudge for inactive customers.",
+    icon: RotateCcw, gradient: "grad-violet", kind: "campaign", startMode: "now",
     message: "Hi {{customer_name}}, we miss you 💚 It's been a while since your last order at {{business_name}}.",
     steps: [
       { delay: "72", message: "Still here for you — here's 10% off your next order with code COMEBACK10." },
@@ -58,8 +65,8 @@ const templates: Template[] = [
     ],
   },
   {
-    id: "tpl-launchseq", name: "Launch sequence", desc: "Day 0 announce → Day 2 reminder → Day 5 final w/ discount.",
-    icon: Megaphone, gradient: "grad-violet", kind: "sequence",
+    id: "tpl-launchseq", name: "Launch with follow-ups", desc: "Day 0 announce → Day 2 reminder → Day 5 final w/ discount.",
+    icon: Megaphone, gradient: "grad-violet", kind: "campaign", startMode: "now",
     message: "Hi {{customer_name}}! New menu drops today at {{business_name}} 🎉 Be the first to try it.",
     steps: [
       { delay: "48", message: "Missed our new menu? It's the talk of the town this week." },
@@ -88,29 +95,18 @@ const templates: Template[] = [
   },
 ];
 
-interface SequenceStep { delay: string; message: string }
-
 const NewCampaign = () => {
   const nav = useNavigate();
-  const [step, setStep] = useState<1 | 2>(1);
-  const [kind, setKind] = useState<CampaignKind | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
+  const [kind, setKind] = useState<CampaignKind>("campaign");
+  const [filter, setFilter] = useState<"all" | CampaignKind>("all");
 
-  // shared
   const [name, setName] = useState("");
   const [message, setMessage] = useState("Hi {{customer_name}}! 🍛 Big news — we have a new menu at Mama's Kitchen this weekend.\n\n3 new rice dishes · Prices from ₦2,500\nOrder now: nativeid.io/mamas-kitchen");
   const [segmentId, setSegmentId] = useState("s1");
   const [stopOnOrder, setStopOnOrder] = useState(true);
-
-  // one-time / sequence
   const [startMode, setStartMode] = useState<StartMode>("now");
-
-  // sequence
-  const [steps, setSteps] = useState<SequenceStep[]>([
-    { delay: "48", message: "Missed our new menu? Order before Sunday and get 10% off with code MAMA10." },
-    { delay: "120", message: "Last call — the launch promo ends tonight. Tap to order: nativeid.io/mamas-kitchen" },
-  ]);
-
-  // triggered
+  const [steps, setSteps] = useState<SequenceStep[]>([]);
   const [eventKey, setEventKey] = useState<EventKey>("abandoned_cart");
 
   const reach = segments.find(s => s.id === segmentId)?.count ?? 0;
@@ -119,98 +115,103 @@ const NewCampaign = () => {
 
   const applyTemplate = (t: Template) => {
     setKind(t.kind);
-    setName(t.name);
+    setName(t.name === "Blank campaign" ? "" : t.name);
     setMessage(t.message);
     if (t.eventKey) setEventKey(t.eventKey);
-    if (t.steps) setSteps(t.steps);
+    setSteps(t.steps ?? []);
     if (t.startMode) setStartMode(t.startMode);
-    setStep(2);
+    setShowComposer(true);
+  };
+
+  const startBlank = (k: CampaignKind) => {
+    setKind(k);
+    setName("");
+    setSteps([]);
+    setShowComposer(true);
   };
 
   const handleSend = () => {
-    const verb = kind === "triggered" ? "activated" : kind === "sequence" ? "scheduled" : startMode === "now" ? "queued" : "scheduled";
+    const verb = kind === "triggered" ? "activated" : startMode === "now" ? (steps.length ? "started" : "queued") : "scheduled";
     toast.success(`Campaign ${verb}${kind === "triggered" ? "" : ` for ${reach.toLocaleString()} contacts`}`);
     nav("/campaigns");
   };
 
-  // STEP 1 — Pick the kind. This sets the mental frame before anything else.
-  if (step === 1) {
+  const visibleTemplates = templates.filter(t => filter === "all" || t.kind === filter);
+
+  // STEP 1 — Templates first. The choice is: pick a recipe OR start blank.
+  if (!showComposer) {
     return (
       <AppLayout>
         <PageHeader
-          title="What are you sending?"
-          subtitle="Pick how this campaign starts. Everything else — message, audience, follow-ups — works the same way."
+          title="New campaign"
+          subtitle="Pick a template to start fast — or start blank. Every campaign can have follow-ups; triggered ones fire on events."
           actions={<Button variant="outline" asChild className="rounded-xl"><Link to="/campaigns"><ArrowLeft className="h-4 w-4 mr-1.5" />Cancel</Link></Button>}
         />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl">
-          <KindCard
-            kind="one-time" current={kind} setKind={setKind}
-            icon={Send} gradient="grad-primary"
-            title="One-time campaign"
-            desc="Send a single message — now or scheduled. Best for promotions, launches, announcements."
-            example="🍛 New menu this weekend — order now"
-          />
-          <KindCard
-            kind="sequence" current={kind} setKind={setKind}
-            icon={GitBranch} gradient="grad-violet"
-            title="Sequence"
-            desc="Send a first message then auto follow-ups. Stops as soon as the contact converts."
-            example="Day 0 → Day 2 → Day 5 with discount"
-          />
-          <KindCard
-            kind="triggered" current={kind} setKind={setKind}
-            icon={Zap} gradient="grad-orange"
-            title="Triggered"
-            desc="Fires on an event — order placed, cart abandoned, delivered. Always on, no scheduling."
-            example="On cart abandoned (1h) → reminder"
-          />
-        </div>
 
-        {/* Templates — proven recipes that pre-fill kind, message and follow-ups */}
-        <div className="mt-10 max-w-5xl">
-          <div className="flex items-end justify-between mb-3">
-            <div>
-              <h3 className="font-display font-bold text-lg">Or start from a template</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Pre-built recipes proven to convert. You can edit everything before sending.</p>
+        {/* Quick start blank */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 max-w-5xl">
+          <button onClick={() => startBlank("campaign")} className="text-left p-5 rounded-2xl border border-dashed border-border bg-card hover:border-primary hover:shadow-[var(--shadow-md)] transition-all group">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl grad-primary text-white flex items-center justify-center"><Send className="h-4 w-4" /></div>
+              <div className="font-display font-bold">Blank campaign</div>
             </div>
-            <span className="text-[11px] text-muted-foreground">{templates.length} templates</span>
+            <p className="text-xs text-muted-foreground">Send a message manually — now or scheduled. Add follow-up messages if you want a sequence.</p>
+          </button>
+          <button onClick={() => startBlank("triggered")} className="text-left p-5 rounded-2xl border border-dashed border-border bg-card hover:border-primary hover:shadow-[var(--shadow-md)] transition-all group">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-10 w-10 rounded-xl grad-orange text-white flex items-center justify-center"><Zap className="h-4 w-4" /></div>
+              <div className="font-display font-bold">Blank triggered</div>
+            </div>
+            <p className="text-xs text-muted-foreground">Fires automatically on an event — order placed, cart abandoned, delivered. Always on.</p>
+          </button>
+        </div>
+
+        {/* Templates header + filter */}
+        <div className="flex items-end justify-between mb-3 max-w-5xl">
+          <div>
+            <h3 className="font-display font-bold text-lg">Start from a template</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Proven recipes — pre-fills the message, follow-ups, and trigger. Edit anything before sending.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {templates.map(t => {
-              const Icon = t.icon;
-              const kindBadge = t.kind === "one-time" ? "One-time" : t.kind === "sequence" ? "Sequence" : "Triggered";
-              return (
-                <button key={t.id} onClick={() => applyTemplate(t)}
-                  className="text-left p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all group">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`h-10 w-10 rounded-xl ${t.gradient} text-white flex items-center justify-center`}><Icon className="h-4 w-4" /></div>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{kindBadge}</span>
-                  </div>
-                  <div className="font-semibold text-sm leading-snug">{t.name}</div>
-                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">{t.desc}</p>
-                  <div className="text-[11px] text-primary font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Use template →</div>
-                </button>
-              );
-            })}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
+            {(["all", "campaign", "triggered"] as const).map(f => (
+              <button key={f} onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${filter === f ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                {f}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-between max-w-5xl">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="h-4 w-4 text-success" />
-            All kinds respect the 2-per-24h cap and STOP replies.
-          </div>
-          <Button onClick={() => setStep(2)} disabled={!kind} className="rounded-xl grad-primary text-primary-foreground border-0">
-            Continue <ArrowRight className="h-4 w-4 ml-1.5" />
-          </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-5xl">
+          {visibleTemplates.filter(t => t.id !== "tpl-blank-campaign").map(t => {
+            const Icon = t.icon;
+            const kindBadge = t.kind === "triggered" ? "Triggered" : (t.steps?.length ? `Campaign · ${t.steps.length + 1} steps` : "Campaign");
+            return (
+              <button key={t.id} onClick={() => applyTemplate(t)}
+                className="text-left p-4 rounded-2xl border border-border bg-card hover:border-primary/40 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all group">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`h-10 w-10 rounded-xl ${t.gradient} text-white flex items-center justify-center`}><Icon className="h-4 w-4" /></div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{kindBadge}</span>
+                </div>
+                <div className="font-semibold text-sm leading-snug">{t.name}</div>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed line-clamp-2">{t.desc}</p>
+                <div className="text-[11px] text-primary font-semibold mt-3 opacity-0 group-hover:opacity-100 transition-opacity">Use template →</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground max-w-5xl">
+          <ShieldCheck className="h-4 w-4 text-success" />
+          All campaigns respect the 2-per-24h cap and STOP replies.
         </div>
       </AppLayout>
     );
   }
 
-  // STEP 2 — One unified composer, configured by kind.
-  const k = kind!;
-  const kindLabel = k === "one-time" ? "one-time campaign" : k === "sequence" ? "sequence" : "triggered campaign";
+  // STEP 2 — One unified composer.
+  const k = kind;
+  const kindLabel = k === "triggered" ? "triggered campaign" : "campaign";
 
   return (
     <AppLayout>
@@ -219,11 +220,11 @@ const NewCampaign = () => {
         subtitle="Compose, target, and confirm. Sent only to opted-in contacts."
         actions={
           <>
-            <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl"><ArrowLeft className="h-4 w-4 mr-1.5" />Back</Button>
+            <Button variant="outline" onClick={() => setShowComposer(false)} className="rounded-xl"><ArrowLeft className="h-4 w-4 mr-1.5" />Back to templates</Button>
             <Button variant="outline" className="rounded-xl">Save draft</Button>
             <Button onClick={handleSend} className="rounded-xl grad-primary text-primary-foreground border-0">
               <Send className="h-4 w-4 mr-1.5" />
-              {k === "triggered" ? "Activate" : k === "sequence" ? "Start sequence" : startMode === "now" ? "Send now" : "Schedule"}
+              {k === "triggered" ? "Activate" : startMode === "now" ? (steps.length ? "Start campaign" : "Send now") : "Schedule"}
             </Button>
           </>
         }
@@ -239,7 +240,7 @@ const NewCampaign = () => {
             <p className="text-[11px] text-muted-foreground mt-1.5">Internal name — your customers never see this.</p>
           </section>
 
-          {/* Start condition — different per kind, same section */}
+          {/* Start condition */}
           <section className="surface-card p-6">
             <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2">
               {k === "triggered" ? <Zap className="h-4 w-4 text-primary" /> : <Calendar className="h-4 w-4 text-primary" />}
@@ -326,7 +327,7 @@ const NewCampaign = () => {
 
           {/* Message */}
           <section className="surface-card p-6">
-            <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> {k === "sequence" ? "First message (Day 0)" : "Message"}</h3>
+            <h3 className="font-display font-bold text-lg mb-4 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> {steps.length > 0 ? "First message (Day 0)" : "Message"}</h3>
             <Textarea value={message} onChange={e => setMessage(e.target.value)} rows={6} className="rounded-xl text-sm leading-relaxed" maxLength={1024} />
             <div className="flex items-center justify-between mt-3">
               <div className="flex flex-wrap gap-1.5">
@@ -339,54 +340,54 @@ const NewCampaign = () => {
             </div>
           </section>
 
-          {/* Follow-ups (sequence + one-time both support — sequence requires) */}
-          {(k === "sequence" || k === "one-time") && (
-            <section className="surface-card p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-display font-bold text-lg flex items-center gap-2"><GitBranch className="h-4 w-4 text-primary" /> Follow-ups</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Each step only sends to contacts who haven't taken the desired action yet.</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setSteps([...steps, { delay: "72", message: "" }])} className="rounded-lg"><Plus className="h-3.5 w-3.5 mr-1" />Add step</Button>
+          {/* Follow-ups — available on every kind. Optional for everyone. */}
+          <section className="surface-card p-6">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="font-display font-bold text-lg flex items-center gap-2"><GitBranch className="h-4 w-4 text-primary" /> Follow-ups <span className="text-[11px] font-normal text-muted-foreground">(optional)</span></h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Add nudges for contacts who haven't acted yet. Leave empty to send just one message.</p>
               </div>
+              <Button variant="outline" size="sm" onClick={() => setSteps([...steps, { delay: "72", message: "" }])} className="rounded-lg"><Plus className="h-3.5 w-3.5 mr-1" />Add follow-up</Button>
+            </div>
 
-              {steps.length === 0 && k === "one-time" && (
-                <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-                  No follow-ups. This campaign sends once and stops.
-                </div>
-              )}
+            {steps.length === 0 && (
+              <div className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                No follow-ups. This {k === "triggered" ? "trigger" : "campaign"} sends one message and stops.
+              </div>
+            )}
 
-              <div className="space-y-3">
-                {steps.map((s, i) => (
-                  <div key={i} className="rounded-xl border border-border p-4 bg-muted/20">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="h-6 w-6 rounded-full grad-violet text-white flex items-center justify-center text-[11px] font-bold">{i + 2}</span>
-                        <span className="text-sm font-semibold">Step {i + 2}</span>
-                        <Select value={s.delay} onValueChange={v => setSteps(prev => prev.map((x, idx) => idx === i ? { ...x, delay: v } : x))}>
-                          <SelectTrigger className="h-8 w-[150px] rounded-lg text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="24">After 24 hours</SelectItem>
-                            <SelectItem value="48">After 48 hours</SelectItem>
-                            <SelectItem value="72">After 72 hours</SelectItem>
-                            <SelectItem value="120">After 5 days</SelectItem>
-                            <SelectItem value="168">After 7 days</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => setSteps(prev => prev.filter((_, idx) => idx !== i))}><Trash2 className="h-3.5 w-3.5" /></Button>
+            <div className="space-y-3">
+              {steps.map((s, i) => (
+                <div key={i} className="rounded-xl border border-border p-4 bg-muted/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-6 w-6 rounded-full grad-violet text-white flex items-center justify-center text-[11px] font-bold">{i + 2}</span>
+                      <span className="text-sm font-semibold">Follow-up {i + 1}</span>
+                      <Select value={s.delay} onValueChange={v => setSteps(prev => prev.map((x, idx) => idx === i ? { ...x, delay: v } : x))}>
+                        <SelectTrigger className="h-8 w-[150px] rounded-lg text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="24">After 24 hours</SelectItem>
+                          <SelectItem value="48">After 48 hours</SelectItem>
+                          <SelectItem value="72">After 72 hours</SelectItem>
+                          <SelectItem value="120">After 5 days</SelectItem>
+                          <SelectItem value="168">After 7 days</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Textarea rows={2} className="rounded-lg text-sm" value={s.message} onChange={e => setSteps(prev => prev.map((x, idx) => idx === i ? { ...x, message: e.target.value } : x))} placeholder="Write the follow-up message…" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => setSteps(prev => prev.filter((_, idx) => idx !== i))}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
-                ))}
-              </div>
+                  <Textarea rows={2} className="rounded-lg text-sm" value={s.message} onChange={e => setSteps(prev => prev.map((x, idx) => idx === i ? { ...x, message: e.target.value } : x))} placeholder="Write the follow-up message…" />
+                </div>
+              ))}
+            </div>
 
+            {steps.length > 0 && (
               <label className="flex items-center gap-2 text-sm mt-4">
                 <Switch checked={stopOnOrder} onCheckedChange={setStopOnOrder} />
                 Stop all follow-ups as soon as the contact places an order
               </label>
-            </section>
-          )}
+            )}
+          </section>
         </div>
 
         {/* Right rail */}
@@ -404,7 +405,7 @@ const NewCampaign = () => {
                 <p className="text-[13px] whitespace-pre-wrap text-gray-800 leading-snug">{preview}</p>
                 <div className="text-[10px] text-gray-400 text-right mt-1">10:00 ✓✓</div>
               </div>
-              {k === "sequence" && steps.length > 0 && (
+              {steps.length > 0 && (
                 <div className="text-[10px] text-center text-gray-500 bg-white/40 rounded-full py-1 my-1">+{steps[0].delay}h follow-up if no order</div>
               )}
               {k === "triggered" && (
@@ -427,19 +428,6 @@ const NewCampaign = () => {
     </AppLayout>
   );
 };
-
-function KindCard({ kind, current, setKind, icon: Icon, gradient, title, desc, example }: any) {
-  const active = current === kind;
-  return (
-    <button onClick={() => setKind(kind)}
-      className={`text-left p-6 rounded-2xl border-2 transition-all ${active ? "border-primary bg-primary/5 shadow-[var(--shadow-md)] -translate-y-0.5" : "border-border bg-card hover:border-primary/30"}`}>
-      <div className={`h-12 w-12 rounded-xl ${gradient} text-white flex items-center justify-center mb-4`}><Icon className="h-5 w-5" /></div>
-      <h3 className="font-display font-bold text-lg">{title}</h3>
-      <p className="text-sm text-muted-foreground mt-1 mb-4 leading-relaxed">{desc}</p>
-      <div className="text-[11px] font-mono bg-accent text-accent-foreground rounded-lg px-2.5 py-1.5 inline-block">{example}</div>
-    </button>
-  );
-}
 
 function Guard({ title, desc, ok }: { title: string; desc: string; ok?: boolean }) {
   return (

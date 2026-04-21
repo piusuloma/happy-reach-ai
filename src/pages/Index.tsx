@@ -75,8 +75,8 @@ const Index = () => {
         <div className="surface-card p-6">
           <h3 className="font-display text-lg font-bold mb-4">Engine status</h3>
           <ul className="space-y-3 text-sm">
-            <Row icon={Megaphone} label="Active one-time" value={campaigns.filter(c => c.kind === 'one-time' && (c.status === 'sending' || c.status === 'scheduled')).length} to="/campaigns" />
-            <Row icon={GitBranch} label="Running sequences" value={campaigns.filter(c => c.kind === 'sequence' && c.status === 'sending').length} to="/campaigns" />
+            <Row icon={Megaphone} label="Active campaigns" value={campaigns.filter(c => c.kind === 'campaign' && (c.status === 'sending' || c.status === 'scheduled')).length} to="/campaigns" />
+            <Row icon={GitBranch} label="With follow-ups" value={campaigns.filter(c => c.kind === 'campaign' && c.status === 'sending' && (c.steps ?? 0) > 1).length} to="/campaigns" />
             <Row icon={Zap} label="Live triggered" value={campaigns.filter(c => c.kind === 'triggered' && c.status === 'live').length} to="/campaigns" />
             <Row icon={Sparkles} label="2-per-24h cap" value="Enforced" to="/campaigns" />
           </ul>
