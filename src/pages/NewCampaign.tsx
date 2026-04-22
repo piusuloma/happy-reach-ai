@@ -10,15 +10,10 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Clock,
-  MessageCircle,
-  Send,
+  Plus,
   ShieldCheck,
-  ShoppingCart,
   Sparkles,
-  Star,
-  UserPlus,
-  Users,
+  Trash2,
   Zap,
 } from "lucide-react";
 
@@ -53,6 +48,16 @@ const DELAYS: DelayOption[] = [
   { id: "3h",        label: "After 3 hours" },
   { id: "24h",       label: "After 24 hours" },
 ];
+
+const FOLLOWUP_DELAYS = [
+  { id: "1",  label: "1 day later" },
+  { id: "2",  label: "2 days later" },
+  { id: "3",  label: "3 days later" },
+  { id: "5",  label: "5 days later" },
+  { id: "7",  label: "7 days later" },
+];
+
+interface FollowUp { delay: string; message: string; }
 
 const VARS = [
   { token: "{{customer_name}}", label: "Customer name" },
@@ -148,8 +153,18 @@ const NewCampaign = () => {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [delay, setDelay] = useState("immediate");
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
 
   const totalSteps = mode === "campaign" ? 5 : 4;
+
+  const addFollowUp = () => {
+    if (followUps.length >= 3) return;
+    const nextDelay = FOLLOWUP_DELAYS[followUps.length]?.id ?? "7";
+    setFollowUps(f => [...f, { delay: nextDelay, message: "" }]);
+  };
+  const removeFollowUp = (i: number) => setFollowUps(f => f.filter((_, idx) => idx !== i));
+  const updateFollowUp = (i: number, patch: Partial<FollowUp>) =>
+    setFollowUps(f => f.map((x, idx) => idx === i ? { ...x, ...patch } : x));
 
   const selectedAudience = AUDIENCES.find(a => a.id === audienceId);
   const selectedTrigger  = TRIGGERS.find(t => t.id === triggerId);
