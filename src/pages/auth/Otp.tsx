@@ -64,8 +64,10 @@ const Otp = () => {
       refs.current[0]?.focus();
       return;
     }
+    // Mock session — gates the merchant app routes.
+    sessionStorage.setItem("nativeid_session", "1");
     toast.success(mode === "signup" ? "Welcome to NativeID 🎉" : "Welcome back");
-    nav(mode === "signup" ? "/auth/profile" : next || "/identity");
+    nav(mode === "signup" ? "/auth/profile" : next || "/");
   };
 
   return (
