@@ -125,3 +125,46 @@ export const publicVerificationEvents = [
   { label: "CAC registration confirmed", at: "March 2026", detail: "RC-1924881" },
   { label: "Anti-impersonation monitoring active", at: "Ongoing" },
 ];
+
+// Merchant menu — surfaced on the public profile so customers don't just
+// verify the business, they can also see what's on offer in the same flow.
+export interface MerchantProduct {
+  id: string;
+  name: string;
+  price: number;
+  unit?: string;
+  description: string;
+  emoji: string;
+  available: boolean;
+}
+export const merchantProducts: MerchantProduct[] = [
+  { id: "p1", name: "Jollof Rice & Chicken", price: 3500, unit: "per plate", description: "Smoky party-style jollof, grilled chicken, fried plantain.", emoji: "🍛", available: true },
+  { id: "p2", name: "Egusi Soup & Pounded Yam", price: 4200, unit: "per plate", description: "Rich egusi with assorted meat, soft pounded yam.", emoji: "🥣", available: true },
+  { id: "p3", name: "Suya Platter", price: 5500, unit: "serves 2", description: "Spicy beef suya with onions, tomatoes and yaji.", emoji: "🍢", available: true },
+  { id: "p4", name: "Small Chops Bowl", price: 6000, unit: "20 pieces", description: "Puff-puff, samosa, spring rolls, peppered gizzard.", emoji: "🥟", available: true },
+  { id: "p5", name: "Weekend Party Tray", price: 45000, unit: "feeds 25", description: "Custom tray — message us 24h ahead.", emoji: "🎉", available: false },
+];
+
+// Public socials — verified contact channels shown on the profile tab.
+export interface MerchantSocial {
+  platform: "WhatsApp" | "Instagram" | "Facebook" | "TikTok" | "Website";
+  handle: string;
+  url: string;
+  verified: boolean;
+}
+export const merchantSocials: MerchantSocial[] = [
+  { platform: "WhatsApp", handle: "+234 803 421 0099", url: "https://wa.me/2348034210099", verified: true },
+  { platform: "Instagram", handle: "@mamaskitchen.lagos", url: "https://instagram.com/mamaskitchen.lagos", verified: true },
+  { platform: "Facebook", handle: "Mama's Kitchen Lagos", url: "https://facebook.com/mamaskitchenlagos", verified: true },
+  { platform: "TikTok", handle: "@mamaskitchen", url: "https://tiktok.com/@mamaskitchen", verified: false },
+  { platform: "Website", handle: "mamaskitchen.ng", url: "https://mamaskitchen.ng", verified: true },
+];
+
+export const merchantBio =
+  "Home-style Nigerian cooking out of Lekki Phase 1. Family-run since 2019. Daily lunch delivery + weekend party trays. Order on WhatsApp before 10am for same-day delivery.";
+
+export const merchantHours = [
+  { day: "Mon – Fri", hours: "10:00 – 21:00" },
+  { day: "Saturday", hours: "11:00 – 22:00" },
+  { day: "Sunday", hours: "Closed" },
+];
