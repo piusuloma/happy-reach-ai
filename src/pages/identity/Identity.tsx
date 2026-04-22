@@ -1,3 +1,4 @@
+import React from "react";
 import { AppLayout, PageHeader } from "@/components/AppLayout";
 import { MigrationBanner } from "@/components/identity/MigrationBanner";
 import { VerifiedBadge } from "@/components/identity/VerifiedBadge";
@@ -22,10 +23,13 @@ import {
   Copy,
   Eye,
   Lock,
+  MousePointerClick,
   QrCode,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  TrendingUp,
+  UserPlus,
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -98,18 +102,17 @@ const Identity = () => {
             <div className="mt-2 flex items-center gap-2">
               <code className="flex-1 text-sm font-mono bg-muted rounded-lg px-3 py-2 truncate">{profileUrl}</code>
               <Button
-                size="icon"
                 variant="outline"
-                className="rounded-lg shrink-0"
+                className="rounded-lg shrink-0 gap-1.5 text-xs"
                 onClick={() => {
                   navigator.clipboard.writeText(`https://${profileUrl}`);
                   toast.success("Link copied");
                 }}
               >
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5" /> Copy
               </Button>
-              <Button size="icon" variant="outline" className="rounded-lg shrink-0">
-                <QrCode className="h-4 w-4" />
+              <Button variant="outline" className="rounded-lg shrink-0 gap-1.5 text-xs">
+                <QrCode className="h-3.5 w-3.5" /> QR Code
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
@@ -128,6 +131,15 @@ const Identity = () => {
               Fake accounts using your name, taken down across Instagram, WhatsApp and Facebook.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Profile analytics */}
+      <div className="surface-card p-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <ProfileStat icon={Eye} iconColor="bg-sky-500" label="Total Views" value={32} accentColor="bg-sky-500" />
+          <ProfileStat icon={MousePointerClick} iconColor="bg-emerald-500" label="Total Clicks" value={0} accentColor="bg-emerald-500" />
+          <ProfileStat icon={UserPlus} iconColor="bg-violet-500" label="Contact Saves" value={0} accentColor="bg-violet-500" />
         </div>
       </div>
 
@@ -207,9 +219,50 @@ const Identity = () => {
         </div>
       </div>
 
+      {/* Pro tip */}
+      <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 p-4 flex items-start gap-3">
+        <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+          <TrendingUp className="h-4 w-4 text-white" />
+        </div>
+        <div>
+          <div className="font-semibold text-sm text-foreground">Pro Tip</div>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            Share your QR code on business cards, flyers, and social media to increase your profile views and grow your customer connections.
+          </p>
+        </div>
+      </div>
+
     </AppLayout>
   );
 };
+
+function ProfileStat({
+  icon: Icon,
+  iconColor,
+  label,
+  value,
+  accentColor,
+}: {
+  icon: React.ElementType;
+  iconColor: string;
+  label: string;
+  value: number;
+  accentColor: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 flex flex-col gap-2">
+      <div className={`h-11 w-11 rounded-xl ${iconColor} flex items-center justify-center`}>
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <div className="font-display text-3xl font-bold tabular-nums">{value.toLocaleString()}</div>
+      <div className="text-sm font-medium text-foreground">{label}</div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <span className={`h-0.5 w-5 rounded-full ${accentColor}`} />
+        All time
+      </div>
+    </div>
+  );
+}
 
 function TierCard({ tier, status }: { tier: typeof tierMatrix[number]; status: TierStatus }) {
   const isVerified = status === "verified";
