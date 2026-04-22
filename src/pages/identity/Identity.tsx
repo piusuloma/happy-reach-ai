@@ -10,7 +10,6 @@ import {
   tierMatrix,
   bandFor,
   impersonationAlerts,
-  type Tier,
   type TierStatus,
 } from "@/data/identity";
 import {
@@ -22,15 +21,14 @@ import {
   Clock,
   Copy,
   Eye,
-  Lock,
   MousePointerClick,
+  Pencil,
   QrCode,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   TrendingUp,
   UserPlus,
-  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,9 +42,14 @@ const Identity = () => {
 
       <PageHeader
         title="Your NativeID"
-        subtitle="Customers verify you in 30 seconds. Higher tiers unlock larger escrow limits and stronger trust signals."
+        subtitle="Customers verify you in 30 seconds. Higher tiers unlock stronger trust signals."
         actions={
           <>
+            <Button variant="outline" className="rounded-xl" asChild>
+              <Link to="/auth/profile">
+                <Pencil className="h-4 w-4" /> Edit profile
+              </Link>
+            </Button>
             <Button variant="outline" className="rounded-xl" asChild>
               <Link to={`/id/${identity.handle}`} target="_blank">
                 <Eye className="h-4 w-4" /> View public profile
@@ -120,7 +123,7 @@ const Identity = () => {
             </p>
           </div>
 
-          {/* Anti-impersonation snapshot — merchant-relevant signal in the third slot */}
+          {/* Anti-impersonation snapshot */}
           <div className="rounded-2xl border border-border p-4">
             <div className="flex items-center justify-between">
               <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Impersonators blocked</div>
@@ -128,7 +131,7 @@ const Identity = () => {
             </div>
             <div className="font-display text-2xl font-bold mt-2">{identity.impersonatorsBlocked}</div>
             <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
-              Fake accounts using your name, taken down across Instagram, WhatsApp and Facebook.
+              Fake accounts using your name, reported and removed on the NativeID platform.
             </p>
           </div>
         </div>
@@ -161,66 +164,42 @@ const Identity = () => {
         </div>
       </div>
 
-      {/* Anti-impersonation + escrow */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="surface-card p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-primary" />
-              <h3 className="font-display text-lg font-bold">Anti-impersonation monitoring</h3>
-            </div>
-            <span className="text-[10px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">Active · Tier 2+</span>
+      {/* Anti-impersonation — full width */}
+      <div className="surface-card p-6 mb-6">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-primary" />
+            <h3 className="font-display text-lg font-bold">Anti-impersonation monitoring</h3>
           </div>
-          <p className="text-xs text-muted-foreground">
-            We scan Instagram, WhatsApp, and Facebook for accounts using your name or photos. {identity.impersonatorsBlocked} taken down so far.
-          </p>
-          <div className="mt-4 divide-y divide-border">
-            {impersonationAlerts.map((a) => (
-              <div key={a.id} className="py-3 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold uppercase">
-                  {a.platform.slice(0, 2)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{a.handle}</div>
-                  <div className="text-[11px] text-muted-foreground">{a.platform} · detected {a.detectedAt}</div>
-                </div>
-                <span
-                  className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
-                    a.status.includes("Taken") ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
-                  }`}
-                >
-                  {a.status}
-                </span>
-              </div>
-            ))}
-          </div>
+          <span className="text-[10px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">Active · Tier 2+</span>
         </div>
-
-        <div className="surface-card p-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Wallet className="h-4 w-4 text-primary" />
-            <h3 className="font-display text-lg font-bold">Escrow limit</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">Maximum per-transaction escrow at your current tier.</p>
-          <div className="mt-4 font-display text-3xl font-bold">₦{identity.escrowLimit.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">per transaction · Tier {identity.tier}</div>
-
-          <div className="mt-5 space-y-2 text-xs">
-            <LimitRow tier={1} amount={50_000} active={identity.tier >= 1} />
-            <LimitRow tier={2} amount={500_000} active={identity.tier >= 2} />
-            <LimitRow tier={3} amount={5_000_000} active={identity.tier >= 3} />
-          </div>
-
-          <Button asChild variant="outline" className="w-full mt-5 rounded-xl">
-            <Link to="/identity/verify">
-              <Sparkles className="h-4 w-4" /> Unlock ₦5,000,000 with Tier 3
-            </Link>
-          </Button>
+        <p className="text-xs text-muted-foreground mb-4">
+          We monitor and remove accounts impersonating your business on the NativeID platform. {identity.impersonatorsBlocked} removed so far.
+        </p>
+        <div className="divide-y divide-border">
+          {impersonationAlerts.map((a) => (
+            <div key={a.id} className="py-3 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-[10px] font-bold uppercase">
+                {a.platform.slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">{a.handle}</div>
+                <div className="text-[11px] text-muted-foreground">NativeID · detected {a.detectedAt}</div>
+              </div>
+              <span
+                className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                  a.status.includes("Taken") ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                }`}
+              >
+                {a.status}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Pro tip */}
-      <div className="mt-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 p-4 flex items-start gap-3">
+      <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 p-4 flex items-start gap-3">
         <div className="h-8 w-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
           <TrendingUp className="h-4 w-4 text-white" />
         </div>
@@ -273,9 +252,10 @@ function TierCard({ tier, status }: { tier: typeof tierMatrix[number]; status: T
     violet: "grad-violet",
   };
   return (
-    <div
-      className={`rounded-2xl border p-4 transition-all ${
-        isVerified ? "border-primary/30 bg-accent" : "border-border bg-card hover:border-primary/40"
+    <Link
+      to="/identity/verify"
+      className={`rounded-2xl border p-4 transition-all block hover:shadow-md ${
+        isVerified ? "border-primary/30 bg-accent hover:border-primary/50" : "border-border bg-card hover:border-primary/40"
       }`}
     >
       <div className="flex items-start justify-between">
@@ -307,23 +287,11 @@ function TierCard({ tier, status }: { tier: typeof tierMatrix[number]; status: T
         ))}
       </ul>
       {!isVerified && !isReview && (
-        <Button size="sm" asChild className="w-full mt-4 rounded-xl grad-primary text-primary-foreground border-0">
-          <Link to="/identity/verify">Start tier {tier.tier} <ArrowRight className="h-3.5 w-3.5" /></Link>
-        </Button>
+        <div className="mt-4 w-full rounded-xl grad-primary text-primary-foreground text-xs font-semibold h-8 flex items-center justify-center gap-1.5">
+          Start tier {tier.tier} <ArrowRight className="h-3.5 w-3.5" />
+        </div>
       )}
-    </div>
-  );
-}
-
-function LimitRow({ tier, amount, active }: { tier: Tier; amount: number; active: boolean }) {
-  return (
-    <div className={`flex items-center justify-between rounded-lg px-3 py-2 ${active ? "bg-accent" : "bg-muted/40 opacity-60"}`}>
-      <div className="flex items-center gap-2">
-        {active ? <CheckCircle2 className="h-3.5 w-3.5 text-primary" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-        <span className="font-medium">Tier {tier}</span>
-      </div>
-      <span className="tabular-nums font-semibold">₦{amount.toLocaleString()}</span>
-    </div>
+    </Link>
   );
 }
 
