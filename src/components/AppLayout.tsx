@@ -1,12 +1,23 @@
 import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Search, ShieldCheck } from "lucide-react";
+import { Bell, Search, ShieldCheck, BadgeCheck, LogOut, ChevronDown, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { business } from "@/data/mock";
+import { identity } from "@/data/identity";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  const nav = useNavigate();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -29,14 +40,42 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex-1 max-w-md mx-auto hidden lg:block">
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search campaigns, contacts, flows…" className="pl-9 bg-muted/50 border-0 h-10 rounded-xl" />
+                <Input placeholder="Search campaigns, contacts, identity…" className="pl-9 bg-muted/50 border-0 h-10 rounded-xl" />
               </div>
             </div>
             <div className="ml-auto flex items-center gap-2">
               <Button variant="ghost" size="icon" className="rounded-xl">
                 <Bell className="h-4 w-4" />
               </Button>
-              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary-glow text-primary-foreground flex items-center justify-center text-xs font-bold">EI</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 h-10 pl-1 pr-2 rounded-xl hover:bg-muted/60 transition-colors">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary-glow text-primary-foreground flex items-center justify-center text-xs font-bold">EI</div>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72">
+                  <DropdownMenuLabel className="font-normal py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BadgeCheck className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-semibold text-primary">Signed in via NativeID SSO</span>
+                    </div>
+                    <div className="text-sm font-bold">{identity.businessName}</div>
+                    <div className="text-[11px] text-muted-foreground">{identity.mobile}</div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/identity"><BadgeCheck className="h-4 w-4" /> My identity</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to={`/id/${identity.handle}`} target="_blank"><ExternalLink className="h-4 w-4" /> View public profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => nav("/auth/login")} className="text-destructive">
+                    <LogOut className="h-4 w-4" /> Log out everywhere
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
           <main className="flex-1 p-6 lg:p-8 max-w-[1400px] w-full mx-auto animate-fade-in">

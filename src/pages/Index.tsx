@@ -1,21 +1,21 @@
 import { AppLayout, PageHeader } from "@/components/AppLayout";
 import { StatTile } from "@/components/StatTile";
 import { StatusPill } from "@/components/StatusPill";
+import { MigrationBanner } from "@/components/identity/MigrationBanner";
 import { Megaphone, Users, MessageSquare, CheckCircle2, ArrowUpRight, Zap, GitBranch, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { campaigns, triggers, messagesSeries, business } from "@/data/mock";
+import { campaigns, messagesSeries, business } from "@/data/mock";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 
 const Index = () => {
-  const active = campaigns.filter((c) => c.status === "sending" || c.status === "scheduled").length;
   const sent30d = 14_286;
   const delivered = 13_902;
   const deliveryRate = ((delivered / sent30d) * 100).toFixed(1);
-  const enabledTriggers = triggers.filter((t) => t.enabled).length;
 
   return (
     <AppLayout>
+      <MigrationBanner />
       <PageHeader
         title="Automation Engine"
         subtitle={`Verified WhatsApp messaging on top of ${business.name} · the right message to the right customer at the right moment.`}

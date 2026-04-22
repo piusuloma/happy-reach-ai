@@ -1,4 +1,4 @@
-import { Megaphone, MessagesSquare, Inbox, Boxes, Code2, Truck, Sparkles, LayoutDashboard, Users } from "lucide-react";
+import { Megaphone, MessagesSquare, Inbox, Boxes, Code2, Truck, Sparkles, LayoutDashboard, Users, BadgeCheck, Wallet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -6,6 +6,13 @@ import {
 } from "@/components/ui/sidebar";
 import { ShieldCheck } from "lucide-react";
 
+// Single shell — Identity sits ABOVE Automation because identity is the foundation users
+// onboard into first. Wallet groups under Identity (it's a customer-side surface for the
+// same user). Mental model: "Who I am" → "What I do".
+const identitySection = [
+  { title: "My Identity", url: "/identity", icon: BadgeCheck },
+  { title: "Customer Wallet", url: "/wallet", icon: Wallet },
+];
 const phase1 = [
   { title: "Overview", url: "/", icon: LayoutDashboard },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
@@ -72,7 +79,8 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        <Section label="Messaging" items={phase1} />
+        <Section label="Identity" items={identitySection} />
+        <Section label="Automation Engine" items={phase1} />
         <Section label="Conversations" items={phase2} />
         <Section label="Ecosystem" items={phase3} />
         <Section label="Future" items={phase4} />
