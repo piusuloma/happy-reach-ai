@@ -1,9 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Campaigns from "./pages/Campaigns";
 import NewCampaign from "./pages/NewCampaign";
@@ -49,7 +48,7 @@ const App = () => (
           <Route path="/sso/demo" element={<SsoDemo />} />
 
           {/* Merchant app — gated by mobile-OTP login */}
-          <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+          <Route path="/" element={<Navigate to="/campaigns" replace />} />
           <Route path="/identity" element={<RequireAuth><Identity /></RequireAuth>} />
           <Route path="/identity/verify" element={<RequireAuth><Verify /></RequireAuth>} />
           <Route path="/wallet" element={<RequireAuth><Wallet /></RequireAuth>} />

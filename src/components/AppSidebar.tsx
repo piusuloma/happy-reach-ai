@@ -1,4 +1,4 @@
-import { Megaphone, MessagesSquare, Inbox, Boxes, Code2, Truck, Sparkles, LayoutDashboard, Users, BadgeCheck } from "lucide-react";
+import { Megaphone, MessagesSquare, Inbox, Boxes, Code2, Truck, Sparkles, Users, BadgeCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -15,7 +15,6 @@ const identitySection = [
   { title: "My Identity", url: "/identity", icon: BadgeCheck },
 ];
 const phase1 = [
-  { title: "Overview", url: "/", icon: LayoutDashboard },
   { title: "Campaigns", url: "/campaigns", icon: Megaphone },
   { title: "Contacts", url: "/contacts", icon: Users },
 ];
