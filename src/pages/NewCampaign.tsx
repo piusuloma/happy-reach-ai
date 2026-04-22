@@ -330,12 +330,94 @@ const NewCampaign = () => {
                 ))}
               </div>
             </div>
+
+            {/* ── Follow-up messages ── */}
+            <div className="mt-6 pt-5 border-t border-border">
+              <div className="flex items-start justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold">Follow-up messages <span className="text-muted-foreground font-normal text-xs">(optional)</span></p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Send a reminder to customers who didn't respond. Up to 3 follow-ups.
+                  </p>
+                </div>
+                {followUps.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={addFollowUp}
+                    className="shrink-0 ml-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 px-3 py-1.5 rounded-xl transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add follow-up
+                  </button>
+                )}
+              </div>
+
+              {followUps.length === 0 && (
+                <div className="mt-3 rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  No follow-ups added — your message sends once and stops.
+                </div>
+              )}
+
+              <div className="mt-3 space-y-3">
+                {followUps.map((fu, i) => (
+                  <div key={i} className="rounded-2xl border border-border bg-muted/20 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center">
+                          {i + 2}
+                        </span>
+                        <span className="text-sm font-semibold">Follow-up {i + 1}</span>
+                      </div>
+                      <button
+                        type="button"
+                        title="Remove follow-up"
+                        onClick={() => removeFollowUp(i)}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Delay picker */}
+                    <p className="text-xs text-muted-foreground mb-2">Send this message…</p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {FOLLOWUP_DELAYS.map(d => (
+                        <button
+                          type="button"
+                          key={d.id}
+                          onClick={() => updateFollowUp(i, { delay: d.id })}
+                          className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition-colors ${
+                            fu.delay === d.id
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-border text-muted-foreground hover:border-primary/40"
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Textarea
+                      value={fu.message}
+                      onChange={e => updateFollowUp(i, { message: e.target.value })}
+                      rows={3}
+                      maxLength={1024}
+                      placeholder="Write your follow-up message here…"
+                      className="rounded-xl text-sm leading-relaxed resize-none"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      Only sent to customers who haven't ordered after your first message.
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Preview */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Preview — how it looks to a customer</p>
-            <div className="rounded-2xl bg-[#E5DDD5] p-4 min-h-[200px]">
+            <div className="rounded-2xl bg-[#E5DDD5] p-4 min-h-[200px] space-y-2">
+              {/* First message bubble */}
               <div className="bg-white rounded-2xl rounded-tl-sm p-3 max-w-[90%] shadow-sm">
                 <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600 mb-1.5">
                   <ShieldCheck className="h-3 w-3" /> {business.name} · Verified
@@ -343,6 +425,22 @@ const NewCampaign = () => {
                 <p className="text-[13px] text-gray-800 leading-snug whitespace-pre-wrap">{preview || "Your message will appear here…"}</p>
                 <div className="text-[10px] text-gray-400 text-right mt-2">10:00 ✓✓</div>
               </div>
+              {/* Follow-up preview bubbles */}
+              {followUps.map((fu, i) => fu.message ? (
+                <div key={i} className="ml-4">
+                  <div className="text-[9px] text-center text-gray-500 bg-white/50 rounded-full py-0.5 px-2 inline-block mb-1 ml-2">
+                    {FOLLOWUP_DELAYS.find(d => d.id === fu.delay)?.label}
+                  </div>
+                  <div className="bg-white rounded-2xl rounded-tl-sm p-3 max-w-[85%] shadow-sm">
+                    <p className="text-[12px] text-gray-800 leading-snug whitespace-pre-wrap">
+                      {fu.message
+                        .replace(/\{\{customer_name\}\}/g, "Adaeze")
+                        .replace(/\{\{business_name\}\}/g, business.name)}
+                    </p>
+                    <div className="text-[10px] text-gray-400 text-right mt-1">✓✓</div>
+                  </div>
+                </div>
+              ) : null)}
             </div>
             <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
               Your customers will see your verified business name above every message. This builds trust.
