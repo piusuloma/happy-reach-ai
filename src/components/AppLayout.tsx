@@ -71,7 +71,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     <Link to={`/id/${identity.handle}`} target="_blank"><ExternalLink className="h-4 w-4" /> View public profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => nav("/auth/login")} className="text-destructive">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      sessionStorage.removeItem("nativeid_session");
+                      nav("/auth/login");
+                    }}
+                    className="text-destructive"
+                  >
                     <LogOut className="h-4 w-4" /> Log out everywhere
                   </DropdownMenuItem>
                 </DropdownMenuContent>

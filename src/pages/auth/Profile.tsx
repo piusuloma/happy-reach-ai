@@ -26,8 +26,9 @@ const Profile = () => {
         onSubmit={(e) => {
           e.preventDefault();
           if (!valid) return;
+          sessionStorage.setItem("nativeid_session", "1");
           toast.success("Tier 1 verified — your NativeID is ready");
-          nav("/identity");
+          nav("/");
         }}
         className="space-y-4"
       >
