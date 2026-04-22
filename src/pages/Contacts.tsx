@@ -2,7 +2,7 @@ import { AppLayout, PageHeader } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { contacts, segments } from "@/data/mock";
-import { Search, Download, ShieldCheck, ShieldOff, Plus } from "lucide-react";
+import { Search, Download, ShieldCheck, ShieldOff, Plus, Sparkles } from "lucide-react";
 
 const Contacts = () => {
   return (
@@ -15,17 +15,40 @@ const Contacts = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside className="lg:col-span-1 surface-card p-5 h-fit">
-          <h3 className="font-display font-bold mb-3">Segments</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-bold">Segments</h3>
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+            These are the same audiences you pick when creating a campaign.
+          </p>
           <ul className="space-y-1">
             {segments.map(s => (
               <li key={s.id}>
-                <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent text-sm transition-colors">
-                  <span className="text-foreground">{s.name}</span>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">{s.count}</span>
+                <button type="button" className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-accent transition-colors group">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base shrink-0 leading-none">{s.emoji}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{s.name}</span>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 font-semibold">{s.count.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5 pl-7">
+                    <span className="text-[10px] text-muted-foreground leading-snug truncate">{s.desc}</span>
+                    {s.type === "auto" && (
+                      <span className="shrink-0 inline-flex items-center gap-0.5 text-[9px] font-bold text-primary bg-primary/8 px-1.5 py-0.5 rounded-full">
+                        <Sparkles className="h-2.5 w-2.5" />auto
+                      </span>
+                    )}
+                  </div>
                 </button>
               </li>
             ))}
           </ul>
+          <div className="mt-3 pt-3 border-t border-border">
+            <button type="button" className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 font-medium">
+              <Plus className="h-3.5 w-3.5" /> Add custom segment
+            </button>
+          </div>
         </aside>
 
         <div className="lg:col-span-3">

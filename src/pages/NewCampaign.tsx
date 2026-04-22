@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { business } from "@/data/mock";
+import { business, segments } from "@/data/mock";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -17,14 +17,10 @@ import {
 } from "lucide-react";
 
 /* ─── Data ───────────────────────────────────────────────────── */
-const AUDIENCES = [
-  { id: "s1", label: "Everyone",          desc: "All your opted-in customers",        count: 1240, emoji: "👥" },
-  { id: "s3", label: "Recent buyers",     desc: "Ordered in the last 30 days",        count: 412,  emoji: "🕐" },
-  { id: "s2", label: "My best customers", desc: "3 or more orders with you",          count: 684,  emoji: "⭐" },
-  { id: "s6", label: "Customers I miss",  desc: "Haven't ordered in over 60 days",    count: 318,  emoji: "💤" },
-  { id: "s5", label: "Almost lost",       desc: "No order in 21–60 days — at risk",   count: 218,  emoji: "⚠️" },
-  { id: "s4", label: "VIP only",          desc: "Top spenders — 10 or more orders",   count: 96,   emoji: "👑" },
-];
+// Audiences come from the single source of truth in mock.ts (same as Contacts page segments).
+// Order here controls display order in the wizard — put most-used first.
+const AUDIENCE_ORDER = ["s1", "s3", "s2", "s6", "s5", "s4"];
+const AUDIENCES = AUDIENCE_ORDER.map(id => segments.find(s => s.id === id)!).filter(Boolean);
 
 const TRIGGERS = [
   { id: "order_placed",   emoji: "📦", label: "Someone places an order",              desc: "Send a confirmation right away",       when: "Right away",    defaultMsg: "✅ Order confirmed at {{business_name}}! We'll have it ready in 35 mins." },
@@ -224,7 +220,7 @@ const NewCampaign = () => {
   const [triggerDelay, setTriggerDelay] = useState("immediate");
   const [campaignName, setCampaignName] = useState("");
 
-  const selectedAudience = AUDIENCES.find(a => a.id === audienceId);
+  const selectedAudience = segments.find(a => a.id === audienceId);
   const selectedTrigger  = TRIGGERS.find(t => t.id === triggerId);
 
   const pickAudience = (id: string) => {
@@ -298,7 +294,7 @@ const NewCampaign = () => {
         <p className="text-muted-foreground text-sm mb-6">You can only message customers who agreed to hear from you.</p>
         <div className="space-y-3">
           {AUDIENCES.map(a => (
-            <OptionCard key={a.id} emoji={a.emoji} label={a.label} desc={a.desc}
+            <OptionCard key={a.id} emoji={a.emoji} label={a.name} desc={a.desc}
               sub={`${a.count.toLocaleString()} customers`}
               selected={audienceId === a.id} onClick={() => pickAudience(a.id)} />
           ))}
@@ -558,7 +554,7 @@ const NewCampaign = () => {
             value={mode === "campaign" ? "Send to customers" : "Automatic message"} />
           {mode === "campaign" && selectedAudience && (
             <SummaryRow icon={selectedAudience.emoji} label="Who gets it"
-              value={`${selectedAudience.label} — ${selectedAudience.count.toLocaleString()} customers`} />
+              value={`${selectedAudience.name} — ${selectedAudience.count.toLocaleString()} customers`} />
           )}
           {mode === "trigger" && selectedTrigger && (
             <SummaryRow icon={selectedTrigger.emoji} label="Fires when" value={selectedTrigger.label} />

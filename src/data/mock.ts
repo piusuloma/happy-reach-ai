@@ -87,13 +87,25 @@ export const contacts: Contact[] = [
   { id: "u6", name: "Sade L.", phone: "+234 809 ••• 7781", optedIn: true, lastOrder: "1d ago", orders: 22, tags: ["VIP", "Lagos"], segment: "Repeat buyer" },
 ];
 
-export const segments = [
-  { id: "s1", name: "All opted-in", count: 1240 },
-  { id: "s2", name: "Repeat buyers (3+ orders)", count: 684 },
-  { id: "s3", name: "Lagos · Last 30 days", count: 412 },
-  { id: "s4", name: "VIP (10+ orders)", count: 96 },
-  { id: "s5", name: "At risk (no order 21–60d)", count: 218 },
-  { id: "s6", name: "Dormant (60d+)", count: 318 },
+// Segments are the single source of truth used by both Contacts and the
+// campaign wizard.  "auto" = NativeID builds and updates these automatically
+// from order behaviour.  "custom" = merchant-created filters.
+export interface Segment {
+  id: string;
+  name: string;       // friendly label shown everywhere
+  desc: string;       // one-liner explaining who is in it
+  emoji: string;
+  count: number;
+  type: "auto" | "custom";
+}
+
+export const segments: Segment[] = [
+  { id: "s1", name: "Everyone",          desc: "All your opted-in customers",           emoji: "👥", count: 1240, type: "auto"   },
+  { id: "s2", name: "My best customers", desc: "3 or more orders with you",             emoji: "⭐", count: 684,  type: "auto"   },
+  { id: "s3", name: "Recent buyers",     desc: "Ordered in the last 30 days",           emoji: "🕐", count: 412,  type: "auto"   },
+  { id: "s4", name: "VIP only",          desc: "Top spenders — 10 or more orders",      emoji: "👑", count: 96,   type: "auto"   },
+  { id: "s5", name: "Almost lost",       desc: "No order in 21–60 days — at risk",      emoji: "⚠️", count: 218,  type: "auto"   },
+  { id: "s6", name: "Customers I miss",  desc: "Haven't ordered in over 60 days",       emoji: "💤", count: 318,  type: "auto"   },
 ];
 
 // Phase 2 — Chatbot flows
