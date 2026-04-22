@@ -119,21 +119,16 @@ const Identity = () => {
             </p>
           </div>
 
-          {/* SSO products */}
+          {/* Anti-impersonation snapshot — merchant-relevant signal in the third slot */}
           <div className="rounded-2xl border border-border p-4">
             <div className="flex items-center justify-between">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Signed in across</div>
-              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">SSO active</span>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Impersonators blocked</div>
+              <span className="text-[10px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">Active</span>
             </div>
-            <ul className="mt-2.5 space-y-2">
-              {identity.productsLinked.map((p) => (
-                <li key={p.name} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <span className="font-medium truncate">{p.name}</span>
-                  <span className="text-[11px] text-muted-foreground ml-auto">{p.lastActiveAt}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="font-display text-2xl font-bold mt-2">{identity.impersonatorsBlocked}</div>
+            <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+              Fake accounts using your name, taken down across Instagram, WhatsApp and Facebook.
+            </p>
           </div>
         </div>
       </div>
@@ -214,44 +209,6 @@ const Identity = () => {
         </div>
       </div>
 
-      {/* Phase 2 footer — wallet & SSO partners */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        <div className="surface-card p-6">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
-              <h3 className="font-display text-lg font-bold">Customer wallet</h3>
-            </div>
-            <span className="text-[10px] font-semibold text-info bg-info/10 px-2 py-0.5 rounded-full">Phase 2</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Customers see every verified transaction with you in their NativeID wallet — building trust over time.
-          </p>
-          <Button asChild variant="ghost" className="w-full mt-3 rounded-xl justify-between">
-            <Link to="/wallet">
-              Open wallet view <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-
-        <div className="surface-card p-6">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-primary" />
-              <h3 className="font-display text-lg font-bold">Continue with NativeID</h3>
-            </div>
-            <span className="text-[10px] font-semibold text-info bg-info/10 px-2 py-0.5 rounded-full">Phase 2</span>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Let third-party apps verify your identity in one tap — no new password.
-          </p>
-          <Button asChild variant="ghost" className="w-full mt-3 rounded-xl justify-between">
-            <Link to="/sso/demo">
-              See SSO demo <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </div>
     </AppLayout>
   );
 };
