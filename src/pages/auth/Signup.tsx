@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthShell } from "@/components/identity/AuthShell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2, MessageCircle } from "lucide-react";

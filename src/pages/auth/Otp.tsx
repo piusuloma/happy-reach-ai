@@ -72,12 +72,7 @@ const Otp = () => {
     <AuthShell
       step={{ current: 2, total: mode === "signup" ? 3 : 2 }}
       title="Enter your code"
-      subtitle={
-        <>
-          We sent a 6-digit code to <span className="font-medium text-foreground">+234 {phone}</span> via WhatsApp.
-        </>
-      as any
-      }
+      subtitle={`We sent a 6-digit code to +234 ${phone} via WhatsApp.`}
     >
       <div className="space-y-5">
         <div className="rounded-2xl border border-primary/20 bg-accent p-3.5 flex items-start gap-3">
