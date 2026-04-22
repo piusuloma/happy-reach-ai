@@ -6,7 +6,7 @@ interface Props {
   children: ReactNode;
   step?: { current: number; total: number };
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
 }
 
 export function AuthShell({ children, step, title, subtitle }: Props) {
