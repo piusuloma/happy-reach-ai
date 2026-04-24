@@ -18,7 +18,7 @@ const Profile = () => {
 
   return (
     <AuthShell
-      step={{ current: 3, total: 3 }}
+      step={{ current: 4, total: 4 }}
       title="Set up your profile"
       subtitle="This is what customers will see when they verify you. You can edit anything later."
     >

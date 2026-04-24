@@ -28,9 +28,9 @@ const Signup = () => {
 
   return (
     <AuthShell
-      step={{ current: 1, total: 3 }}
+      step={{ current: 1, total: 4 }}
       title="Create your NativeID"
-      subtitle="One mobile number — one identity. We'll verify it with a one-time code."
+      subtitle="Verify your number, pick a password, and you're in. Takes under a minute."
     >
       <form
         onSubmit={(e) => {
@@ -65,8 +65,8 @@ const Signup = () => {
 
         <ul className="space-y-2.5 pt-1">
           {[
-            "Code arrives via SMS in seconds",
-            "Didn't get it? Switch to WhatsApp with one tap",
+            "We'll send a 6-digit code via SMS (or WhatsApp)",
+            "Then you'll create a password for faster sign-in",
             "Tier 1 verified badge issued immediately",
           ].map((t) => (
             <li

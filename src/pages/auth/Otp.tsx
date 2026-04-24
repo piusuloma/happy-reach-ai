@@ -114,15 +114,20 @@ const Otp = () => {
     if (mode === "reset") {
       issueResetToken(phone);
       toast.success("Verified. Create a new password.");
-      nav(`/auth/set-password?phone=${encodeURIComponent(phone)}`);
+      nav(
+        `/auth/set-password?phone=${encodeURIComponent(phone)}&mode=reset`,
+      );
       return;
     }
 
     ensureAccount(phone);
     if (mode === "signup") {
       signIn();
-      toast.success("Welcome to NativeID 🎉");
-      nav("/auth/profile");
+      issueResetToken(phone);
+      toast.success("Verified. Now set your password.");
+      nav(
+        `/auth/set-password?phone=${encodeURIComponent(phone)}&mode=signup`,
+      );
       return;
     }
 
@@ -137,7 +142,7 @@ const Otp = () => {
 
   return (
     <AuthShell
-      step={{ current: 2, total: mode === "signup" ? 3 : 2 }}
+      step={{ current: 2, total: mode === "signup" ? 4 : 2 }}
       title="Enter your code"
       subtitle={
         <>

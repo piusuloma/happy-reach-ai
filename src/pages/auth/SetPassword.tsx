@@ -29,23 +29,26 @@ const strengthColors = [
   "bg-success",
 ];
 
+type Mode = "signup" | "reset";
+
 const SetPasswordPage = () => {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const phone = params.get("phone") || "";
+  const mode = ((params.get("mode") as Mode) || "reset") as Mode;
 
   const [pw, setPw] = useState("");
   const [show, setShow] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // Guard: reset flow requires a fresh OTP verification. If someone deep-links
-    // here without that, bounce them back to login.
+    // Both flows require a fresh OTP verification — if someone deep-links here
+    // without that state, bounce them back to the appropriate start.
     if (!phone || !resetTokenValidFor(phone)) {
       toast.error("Your session expired. Verify your number again.");
-      nav("/auth/login", { replace: true });
+      nav(mode === "signup" ? "/auth/signup" : "/auth/login", { replace: true });
     }
-  }, [phone, nav]);
+  }, [phone, mode, nav]);
 
   const strength = scorePassword(pw);
   const canSubmit = pw.length >= 8 && strength.score >= 2 && !submitting;
@@ -55,28 +58,52 @@ const SetPasswordPage = () => {
     setSubmitting(true);
     if (!consumeResetToken(phone)) {
       toast.error("Session expired. Verify your number again.");
-      nav("/auth/login", { replace: true });
+      nav(mode === "signup" ? "/auth/signup" : "/auth/login", { replace: true });
       return;
     }
     setPassword(phone, pw);
+
+    if (mode === "signup") {
+      // User is already signed in from the OTP step. Continue to profile.
+      toast.success("Password saved. One more step.");
+      nav("/auth/profile");
+      return;
+    }
+
+    // reset: password is set — sign the user in and send them to the dashboard.
     signIn();
-    toast.success("Password saved. You're signed in.");
+    toast.success("Password updated. You're signed in.");
     nav("/", { replace: true });
   };
 
+  const title =
+    mode === "signup" ? "Create a password" : "Set a new password";
+  const subtitle =
+    mode === "signup" ? (
+      <span className="inline-flex items-center gap-2">
+        <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+        For{" "}
+        <span className="font-medium text-foreground">
+          {formatPhone(phone)}
+        </span>
+        . You'll use this to sign in alongside SMS or WhatsApp codes.
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-2">
+        <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+        For{" "}
+        <span className="font-medium text-foreground">
+          {formatPhone(phone)}
+        </span>
+        . Pick something you'll remember.
+      </span>
+    );
+
   return (
     <AuthShell
-      title="Create a password"
-      subtitle={
-        <span className="inline-flex items-center gap-2">
-          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-          For{" "}
-          <span className="font-medium text-foreground">
-            {formatPhone(phone)}
-          </span>
-          . Use this next time for faster sign-in.
-        </span>
-      }
+      step={mode === "signup" ? { current: 3, total: 4 } : undefined}
+      title={title}
+      subtitle={subtitle}
     >
       <form
         onSubmit={(e) => {
@@ -98,7 +125,7 @@ const SetPasswordPage = () => {
             htmlFor="new-password"
             className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
           >
-            New password
+            {mode === "signup" ? "Password" : "New password"}
           </Label>
           <div className="mt-1.5 relative">
             <input
@@ -172,7 +199,7 @@ const SetPasswordPage = () => {
           disabled={!canSubmit}
           className="w-full h-12 rounded-xl grad-primary text-primary-foreground border-0 shadow-[var(--shadow-glow)]"
         >
-          Save password
+          {mode === "signup" ? "Save and continue" : "Save password"}
           <ArrowRight className="h-4 w-4" />
         </Button>
 
