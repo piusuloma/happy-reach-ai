@@ -3,14 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { AuthShell } from "@/components/identity/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, MessageCircle, Smartphone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import {
-  hasPassword,
-  normalizePhone,
-  sendOtp,
-  type Channel,
-} from "@/lib/auth";
+import { hasPassword, normalizePhone, sendOtp } from "@/lib/auth";
 
 const Login = () => {
   const nav = useNavigate();
@@ -18,34 +13,21 @@ const Login = () => {
   const valid = normalizePhone(phone).length >= 10;
 
   /**
-   * The server stays account-existence-neutral: we always advance the user
-   * forward. If they have a password set we surface the password screen;
-   * otherwise we go straight to OTP. No "account not found" message — that
-   * leaks an enumeration oracle.
+   * Account-existence-neutral: we always advance forward. If a password is on
+   * file, surface the password screen. If not (rare — account was never
+   * completed), silently route through the reset flow to set one up. OTP is
+   * never offered as an alternative login — it is reserved for password reset.
    */
-  const submitPassword = () => {
+  const submit = () => {
     if (!valid) return;
     if (hasPassword(phone)) {
       nav(`/auth/password?phone=${encodeURIComponent(phone)}`);
-    } else {
-      const state = sendOtp(phone, "sms", "login");
-      toast.success(`SMS sent. Demo code: ${state.code}`);
-      nav(
-        `/auth/otp?phone=${encodeURIComponent(phone)}&mode=login&channel=sms`,
-      );
+      return;
     }
-  };
-
-  const submitChannel = (channel: Channel) => {
-    if (!valid) return;
-    const state = sendOtp(phone, channel, "login");
-    toast.success(
-      channel === "sms"
-        ? `SMS sent. Demo code: ${state.code}`
-        : `WhatsApp message sent. Demo code: ${state.code}`,
-    );
+    const state = sendOtp(phone, "sms", "reset");
+    toast.success(`Verification code sent via SMS. Demo code: ${state.code}`);
     nav(
-      `/auth/otp?phone=${encodeURIComponent(phone)}&mode=login&channel=${channel}`,
+      `/auth/otp?phone=${encodeURIComponent(phone)}&mode=reset&channel=sms`,
     );
   };
 
@@ -58,7 +40,7 @@ const Login = () => {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          submitPassword();
+          submit();
         }}
         className="space-y-4"
       >
@@ -94,37 +76,6 @@ const Login = () => {
           Continue
           <ArrowRight className="h-4 w-4" />
         </Button>
-
-        <div className="flex items-center gap-3 py-1">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            or get a one-time code
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!valid}
-            onClick={() => submitChannel("sms")}
-            className="h-11 rounded-xl"
-          >
-            <Smartphone className="h-4 w-4" />
-            SMS
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!valid}
-            onClick={() => submitChannel("whatsapp")}
-            className="h-11 rounded-xl border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </Button>
-        </div>
 
         <div className="text-center pt-2 space-y-1">
           <p className="text-xs text-muted-foreground">
