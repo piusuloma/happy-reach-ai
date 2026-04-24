@@ -21,6 +21,8 @@ import SsoDemo from "./pages/identity/SsoDemo";
 import Signup from "./pages/auth/Signup";
 import Login from "./pages/auth/Login";
 import Otp from "./pages/auth/Otp";
+import Password from "./pages/auth/Password";
+import SetPassword from "./pages/auth/SetPassword";
 import Profile from "./pages/auth/Profile";
 import LinkMobile from "./pages/auth/LinkMobile";
 import { RequireAuth } from "./components/RequireAuth";
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/auth/signup" element={<Signup />} />
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/otp" element={<Otp />} />
+          <Route path="/auth/password" element={<Password />} />
+          <Route path="/auth/set-password" element={<SetPassword />} />
           <Route path="/auth/profile" element={<Profile />} />
           <Route path="/auth/link-mobile" element={<LinkMobile />} />
 
