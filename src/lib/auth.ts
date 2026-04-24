@@ -111,9 +111,13 @@ export function currentOtp(): OtpState | null {
   }
 }
 
-export type VerifyResult =
-  | { ok: true }
-  | { ok: false; reason: "expired" | "locked" | "mismatch"; attemptsLeft: number };
+export type VerifyReason = "expired" | "locked" | "mismatch" | "ok";
+
+export type VerifyResult = {
+  ok: boolean;
+  reason: VerifyReason;
+  attemptsLeft: number;
+};
 
 export function verifyOtp(input: string): VerifyResult {
   const state = currentOtp();
@@ -127,7 +131,7 @@ export function verifyOtp(input: string): VerifyResult {
   if (input === state.code) {
     sessionStorage.removeItem(OTP_KEY);
     sessionStorage.removeItem(OTP_ATTEMPTS_KEY);
-    return { ok: true };
+    return { ok: true, reason: "ok", attemptsLeft: MAX_ATTEMPTS - attempts };
   }
 
   const next = attempts + 1;
