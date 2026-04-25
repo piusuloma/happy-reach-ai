@@ -8,9 +8,7 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  MessageCircle,
   ShieldCheck,
-  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -19,8 +17,9 @@ import {
   sendOtp,
   signIn,
   verifyPassword,
-  type Channel,
 } from "@/lib/auth";
+
+const MAX_ATTEMPTS = 5;
 
 const Password = () => {
   const nav = useNavigate();
@@ -32,9 +31,8 @@ const Password = () => {
   const [attempts, setAttempts] = useState(0);
 
   if (!phone || !hasPassword(phone)) {
-    // No password on file — send through OTP instead of stranding the user here.
     return (
-      <AuthShell title="Welcome back" subtitle="Redirecting to one-time code…">
+      <AuthShell title="Welcome back" subtitle="Redirecting…">
         <Link
           to="/auth/login"
           className="text-primary text-sm font-medium hover:underline"
@@ -56,31 +54,21 @@ const Password = () => {
     const next = attempts + 1;
     setAttempts(next);
     setPassword("");
-    if (next >= 4) {
-      toast.error("Too many attempts. Use a one-time code to continue.");
-      const state = sendOtp(phone, "sms", "login");
-      toast.success(`SMS sent. Demo code: ${state.code}`);
-      nav(
-        `/auth/otp?phone=${encodeURIComponent(phone)}&mode=login&channel=sms`,
+    if (next >= MAX_ATTEMPTS) {
+      toast.error(
+        "Too many attempts. Reset your password to continue.",
       );
+      startReset();
       return;
     }
-    toast.error(`Wrong password. ${4 - next} attempt${4 - next === 1 ? "" : "s"} left.`);
-  };
-
-  const otpLogin = (channel: Channel) => {
-    const state = sendOtp(phone, channel, "login");
-    toast.success(
-      channel === "sms"
-        ? `SMS sent. Demo code: ${state.code}`
-        : `WhatsApp message sent. Demo code: ${state.code}`,
-    );
-    nav(
-      `/auth/otp?phone=${encodeURIComponent(phone)}&mode=login&channel=${channel}`,
+    toast.error(
+      `Wrong password. ${MAX_ATTEMPTS - next} attempt${
+        MAX_ATTEMPTS - next === 1 ? "" : "s"
+      } left.`,
     );
   };
 
-  const forgotPassword = () => {
+  const startReset = () => {
     const state = sendOtp(phone, "sms", "reset");
     toast.success(`Reset code sent via SMS. Demo code: ${state.code}`);
     nav(
@@ -163,40 +151,11 @@ const Password = () => {
 
         <button
           type="button"
-          onClick={forgotPassword}
-          className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"
+          onClick={startReset}
+          className="block w-full text-center text-sm text-primary font-medium hover:underline"
         >
           Forgot password?
         </button>
-
-        <div className="flex items-center gap-3 py-1">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            or use a one-time code
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => otpLogin("sms")}
-            className="h-11 rounded-xl"
-          >
-            <Smartphone className="h-4 w-4" />
-            SMS
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => otpLogin("whatsapp")}
-            className="h-11 rounded-xl border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </Button>
-        </div>
       </form>
     </AuthShell>
   );
