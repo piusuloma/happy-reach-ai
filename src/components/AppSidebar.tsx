@@ -15,7 +15,7 @@ const identitySection = [
   { title: "My Identity", url: "/identity", icon: BadgeCheck },
 ];
 const phase1 = [
-  { title: "Campaigns", url: "/campaigns", icon: Megaphone },
+  { title: "Automations", url: "/automations", icon: Megaphone },
   { title: "Contacts", url: "/contacts", icon: Users },
 ];
 const phase2 = [

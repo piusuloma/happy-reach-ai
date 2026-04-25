@@ -20,7 +20,7 @@ import {
 import { campaigns, business, type Campaign, type CampaignKind } from "@/data/mock";
 import { useState } from "react";
 
-const liveCampaigns = campaigns.filter(c => c.kind === "campaign" && (c.status === "sending" || c.status === "scheduled")).length;
+const liveBroadcasts = campaigns.filter(c => c.kind === "campaign" && (c.status === "sending" || c.status === "scheduled")).length;
 const liveTriggered = campaigns.filter(c => c.kind === "triggered" && c.status === "live").length;
 const sent30d = 14_286;
 const delivered30d = 13_902;
@@ -45,7 +45,7 @@ const STATUS_LABEL: Record<string, string> = {
   draft:     "Draft",
 };
 
-const Campaigns = () => {
+const Automations = () => {
   const [tab, setTab] = useState<"all" | CampaignKind>("all");
   const [status, setStatus] = useState<string>("all");
 
@@ -62,11 +62,11 @@ const Campaigns = () => {
   return (
     <AppLayout>
       <PageHeader
-        title="Campaigns"
-        subtitle={`Verified WhatsApp messaging for ${business.name}`}
+        title="Automations"
+        subtitle={`Verified WhatsApp messaging for ${business.name} — one-off broadcasts and always-on triggers, side by side.`}
         actions={
           <Button asChild className="rounded-xl grad-primary text-primary-foreground border-0 shadow-[var(--shadow-glow)]">
-            <Link to="/campaigns/new"><Megaphone className="h-4 w-4 mr-1.5" />New campaign</Link>
+            <Link to="/automations/new"><Megaphone className="h-4 w-4 mr-1.5" />New automation</Link>
           </Button>
         }
       />
@@ -80,7 +80,7 @@ const Campaigns = () => {
               <Zap className="h-3 w-3" /> {liveTriggered} live triggers
             </span>
             <span className="inline-flex items-center gap-1.5 font-semibold text-primary bg-primary/8 px-2.5 py-1 rounded-full">
-              <Send className="h-3 w-3" /> {liveCampaigns} active
+              <Send className="h-3 w-3" /> {liveBroadcasts} active
             </span>
           </div>
         </div>
@@ -94,11 +94,10 @@ const Campaigns = () => {
 
       {/* ── Kind + status filters ── */}
       <div className="surface-card p-4 mb-5 flex flex-wrap items-center gap-3">
-        {/* Kind tabs */}
         <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1">
           {([
             { key: "all" as const, label: `All (${counts.all})` },
-            { key: "campaign" as const, label: `Campaigns (${counts.campaign})` },
+            { key: "campaign" as const, label: `Broadcasts (${counts.campaign})` },
             { key: "triggered" as const, label: `Triggered (${counts.triggered})` },
           ]).map(t => (
             <button type="button" key={t.key} onClick={() => setTab(t.key)}
@@ -108,7 +107,6 @@ const Campaigns = () => {
           ))}
         </div>
 
-        {/* Status filter */}
         <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1 overflow-x-auto">
           {["all", "live", "sending", "scheduled", "completed", "paused", "draft"].map(s => (
             <button type="button" key={s} onClick={() => setStatus(s)}
@@ -127,28 +125,26 @@ const Campaigns = () => {
         </div>
       </div>
 
-      {/* ── Campaign list ── */}
+      {/* ── Automation list ── */}
       <div className="surface-card overflow-hidden">
         {filtered.length === 0 ? (
-          <div className="py-16 text-center text-muted-foreground text-sm">No campaigns match the current filters.</div>
+          <div className="py-16 text-center text-muted-foreground text-sm">No automations match the current filters.</div>
         ) : (
           <div className="divide-y divide-border">
-            {filtered.map((c, i) => <CampaignRow key={c.id} c={c} index={i + 1} />)}
+            {filtered.map((c, i) => <AutomationRow key={c.id} c={c} index={i + 1} />)}
           </div>
         )}
       </div>
 
-      {/* Compliance note */}
       <div className="mt-5 flex items-center gap-2.5 text-xs text-muted-foreground">
         <ShieldCheck className="h-3.5 w-3.5 text-success shrink-0" />
-        2-per-24h frequency cap and STOP replies enforced across all campaigns.
+        Every outbound automation is capped at one follow-up message. STOP replies remove the customer immediately.
       </div>
     </AppLayout>
   );
 };
 
-/* ─── Campaign row ─────────────────────────────────────────────── */
-function CampaignRow({ c, index }: { c: Campaign; index: number }) {
+function AutomationRow({ c, index }: { c: Campaign; index: number }) {
   const hasData = c.sent > 0;
   const dot = STATUS_DOT[c.status] ?? "bg-slate-300";
   const label = STATUS_LABEL[c.status] ?? c.status;
@@ -157,7 +153,6 @@ function CampaignRow({ c, index }: { c: Campaign; index: number }) {
 
   return (
     <div className="flex items-center gap-4 px-5 py-4 hover:bg-muted/30 transition-colors group">
-      {/* Left — identity */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm leading-tight">{c.name}</span>
@@ -182,7 +177,6 @@ function CampaignRow({ c, index }: { c: Campaign; index: number }) {
         )}
       </div>
 
-      {/* Middle — stats columns */}
       {hasData ? (
         <div className="hidden md:flex items-center gap-6 shrink-0">
           <StatCol label="Recipients" value={c.reach} pct={100} />
@@ -204,7 +198,6 @@ function CampaignRow({ c, index }: { c: Campaign; index: number }) {
         </div>
       )}
 
-      {/* Right — actions */}
       <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
         {hasData && (
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary">
@@ -224,7 +217,6 @@ function CampaignRow({ c, index }: { c: Campaign; index: number }) {
   );
 }
 
-/* ─── Helpers ──────────────────────────────────────────────────── */
 function StatCol({ label, value, pct, highlight, muted }: {
   label: string; value: number; pct: number; highlight?: boolean; muted?: boolean;
 }) {
@@ -254,4 +246,4 @@ function SummaryTile({ icon: Icon, color, label, value, sub }: {
   );
 }
 
-export default Campaigns;
+export default Automations;

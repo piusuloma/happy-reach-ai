@@ -22,8 +22,11 @@ const MAX_ATTEMPTS = 5;
 type Account = {
   phone: string;
   passwordHash?: string;
+  marketingOptIn?: boolean;
   createdAt: number;
 };
+
+const MARKETING_OPT_IN_KEY = "nativeid_marketing_opt_in";
 
 export type OtpState = {
   phone: string;
@@ -72,10 +75,19 @@ export function hasPassword(phone: string): boolean {
 export function ensureAccount(phone: string): Account {
   const p = normalizePhone(phone);
   const accounts = loadAccounts();
-  if (!accounts[p]) {
+  const isNew = !accounts[p];
+  if (isNew) {
     accounts[p] = { phone: p, createdAt: Date.now() };
-    saveAccounts(accounts);
   }
+  // Marketing opt-in is captured on the signup screen and stashed in
+  // sessionStorage. Apply it on first account creation, then clear so a later
+  // login doesn't accidentally inherit a stale signup choice.
+  const stash = sessionStorage.getItem(MARKETING_OPT_IN_KEY);
+  if (isNew && stash !== null) {
+    accounts[p].marketingOptIn = stash === "1";
+  }
+  if (stash !== null) sessionStorage.removeItem(MARKETING_OPT_IN_KEY);
+  saveAccounts(accounts);
   return accounts[p];
 }
 

@@ -9,8 +9,8 @@ interface Props {
 }
 
 const tierMeta: Record<Tier, { label: string; gradient: string; icon: typeof ShieldCheck }> = {
-  1: { label: "Identity Verified", gradient: "grad-sky", icon: ShieldCheck },
-  2: { label: "Verified", gradient: "grad-primary", icon: BadgeCheck },
+  1: { label: "Contact Verified", gradient: "grad-sky", icon: ShieldCheck },
+  2: { label: "CAC & NIN Verified", gradient: "grad-primary", icon: BadgeCheck },
   3: { label: "Address Verified", gradient: "grad-violet", icon: Sparkles },
 };
 

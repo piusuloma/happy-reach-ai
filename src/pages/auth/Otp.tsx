@@ -26,7 +26,7 @@ import {
   type OtpPurpose,
 } from "@/lib/auth";
 
-const RESEND_SECONDS = 30;
+const RESEND_SECONDS = 45;
 
 const channelMeta = {
   sms: {
@@ -138,7 +138,6 @@ const Otp = () => {
   };
 
   const ChannelIcon = meta.icon;
-  const OtherIcon = otherMeta.icon;
 
   return (
     <AuthShell
@@ -207,26 +206,6 @@ const Otp = () => {
           </button>
         </div>
 
-        {seconds === 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              otherChannel === "whatsapp"
-                ? openWhatsAppDeepLink()
-                : resend(otherChannel)
-            }
-            className={
-              otherChannel === "whatsapp"
-                ? "w-full h-11 rounded-xl border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E]"
-                : "w-full h-11 rounded-xl"
-            }
-          >
-            <OtherIcon className="h-4 w-4" />
-            Send code via {otherMeta.label} instead
-          </Button>
-        )}
-
         <Button
           onClick={() => submit(code)}
           disabled={code.length !== 6 || submitting}
@@ -237,24 +216,22 @@ const Otp = () => {
           <ArrowRight className="h-4 w-4" />
         </Button>
 
-        {channel === "sms" && seconds > 0 && (
+        {seconds === 0 && (
           <button
             type="button"
-            onClick={openWhatsAppDeepLink}
-            className="block w-full text-center text-xs text-[#128C7E] font-medium hover:underline"
+            onClick={() =>
+              otherChannel === "whatsapp"
+                ? openWhatsAppDeepLink()
+                : resend(otherChannel)
+            }
+            className="block w-full text-center text-xs text-muted-foreground hover:text-foreground"
           >
-            Get code on WhatsApp instead →
+            Get code via {otherMeta.label} instead
           </button>
         )}
 
         <Link
-          to={
-            mode === "signup"
-              ? "/auth/signup"
-              : mode === "reset"
-                ? "/auth/login"
-                : "/auth/login"
-          }
+          to={mode === "signup" ? "/auth/signup" : "/auth/login"}
           className="block text-center text-xs text-muted-foreground hover:text-foreground"
         >
           ← Use a different number

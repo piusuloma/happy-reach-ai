@@ -21,9 +21,9 @@ const Index = () => {
         subtitle={`Verified WhatsApp messaging on top of ${business.name} · the right message to the right customer at the right moment.`}
         actions={
           <>
-            <Button variant="outline" asChild className="rounded-xl"><Link to="/campaigns"><Megaphone className="h-4 w-4 mr-1.5" />All campaigns</Link></Button>
+            <Button variant="outline" asChild className="rounded-xl"><Link to="/automations"><Megaphone className="h-4 w-4 mr-1.5" />All automations</Link></Button>
             <Button asChild className="rounded-xl grad-primary text-primary-foreground border-0 shadow-[var(--shadow-glow)]">
-              <Link to="/campaigns/new"><Megaphone className="h-4 w-4 mr-1.5" />New campaign</Link>
+              <Link to="/automations/new"><Megaphone className="h-4 w-4 mr-1.5" />New automation</Link>
             </Button>
           </>
         }
@@ -41,7 +41,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-1">
             <div>
               <h3 className="font-display text-lg font-bold">Messaging volume</h3>
-              <p className="text-xs text-muted-foreground">Last 14 days · all automations and campaigns</p>
+              <p className="text-xs text-muted-foreground">Last 14 days · all automations</p>
             </div>
             <div className="flex items-center gap-3 text-[11px]">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" />Sent</span>
@@ -75,14 +75,14 @@ const Index = () => {
         <div className="surface-card p-6">
           <h3 className="font-display text-lg font-bold mb-4">Engine status</h3>
           <ul className="space-y-3 text-sm">
-            <Row icon={Megaphone} label="Active campaigns" value={campaigns.filter(c => c.kind === 'campaign' && (c.status === 'sending' || c.status === 'scheduled')).length} to="/campaigns" />
-            <Row icon={GitBranch} label="With follow-ups" value={campaigns.filter(c => c.kind === 'campaign' && c.status === 'sending' && (c.steps ?? 0) > 1).length} to="/campaigns" />
-            <Row icon={Zap} label="Live triggered" value={campaigns.filter(c => c.kind === 'triggered' && c.status === 'live').length} to="/campaigns" />
-            <Row icon={Sparkles} label="2-per-24h cap" value="Enforced" to="/campaigns" />
+            <Row icon={Megaphone} label="Active broadcasts" value={campaigns.filter(c => c.kind === 'campaign' && (c.status === 'sending' || c.status === 'scheduled')).length} to="/automations" />
+            <Row icon={GitBranch} label="With follow-up" value={campaigns.filter(c => c.kind === 'campaign' && c.status === 'sending').length} to="/automations" />
+            <Row icon={Zap} label="Live triggered" value={campaigns.filter(c => c.kind === 'triggered' && c.status === 'live').length} to="/automations" />
+            <Row icon={Sparkles} label="One follow-up max" value="Enforced" to="/automations" />
           </ul>
           <div className="mt-5 rounded-xl bg-accent p-4">
-            <div className="text-xs font-semibold text-accent-foreground">Frequency cap protected</div>
-            <p className="text-[11px] text-muted-foreground mt-1">Each customer receives at most 2 automated messages per 24 hours across all campaigns.</p>
+            <div className="text-xs font-semibold text-accent-foreground">One follow-up, always</div>
+            <p className="text-[11px] text-muted-foreground mt-1">Every automation sends the first message plus exactly one follow-up. No chase sequences, no spam.</p>
           </div>
         </div>
       </div>
@@ -90,16 +90,16 @@ const Index = () => {
       <div className="surface-card p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-display text-lg font-bold">Recent campaigns</h3>
+            <h3 className="font-display text-lg font-bold">Recent automations</h3>
             <p className="text-xs text-muted-foreground">Top of mind · last 7 days</p>
           </div>
-          <Button variant="ghost" size="sm" asChild className="rounded-xl"><Link to="/campaigns">View all<ArrowUpRight className="h-3.5 w-3.5 ml-1" /></Link></Button>
+          <Button variant="ghost" size="sm" asChild className="rounded-xl"><Link to="/automations">View all<ArrowUpRight className="h-3.5 w-3.5 ml-1" /></Link></Button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                <th className="pb-2 pr-4 font-medium">Campaign</th>
+                <th className="pb-2 pr-4 font-medium">Automation</th>
                 <th className="pb-2 pr-4 font-medium">Status</th>
                 <th className="pb-2 pr-4 font-medium">Audience</th>
                 <th className="pb-2 pr-4 font-medium text-right">Reach</th>

@@ -1,126 +1,88 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { business, segments } from "@/data/mock";
+import { identity } from "@/data/identity";
+import {
+  categoryFromLabel,
+  templateFor,
+  type MessageTemplate,
+} from "@/data/templates";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Plus,
+  Clock,
   ShieldCheck,
   Sparkles,
-  Trash2,
 } from "lucide-react";
 
-/* ─── Data ───────────────────────────────────────────────────── */
-// Audiences come from the single source of truth in mock.ts (same as Contacts page segments).
-// Order here controls display order in the wizard — put most-used first.
+/* ─── Fixed data ──────────────────────────────────────────────── */
+
+// Keep audience ordering stable: most-used first.
 const AUDIENCE_ORDER = ["s1", "s3", "s2", "s6", "s5", "s4"];
 const AUDIENCES = AUDIENCE_ORDER.map(id => segments.find(s => s.id === id)!).filter(Boolean);
 
+// Each trigger declares its industry-recommended delay so we can ship
+// triggered automations without asking the merchant to pick a timing.
 const TRIGGERS = [
-  { id: "order_placed",   emoji: "📦", label: "Someone places an order",              desc: "Send a confirmation right away",       when: "Right away",    defaultMsg: "✅ Order confirmed at {{business_name}}! We'll have it ready in 35 mins." },
-  { id: "abandoned_cart", emoji: "🛒", label: "Someone leaves their cart",            desc: "Remind them 1 hour later",             when: "After 1 hour",  defaultMsg: "Hi {{customer_name}} — you left something in your cart! Tap to finish your order 👇" },
-  { id: "delivered",      emoji: "⭐", label: "An order is delivered",                desc: "Ask for a rating 3 hours later",       when: "After 3 hours", defaultMsg: "How was your order from {{business_name}}? Reply 1–5 to rate us ⭐" },
-  { id: "welcome",        emoji: "👋", label: "A new customer messages me",           desc: "Welcome them straight away",           when: "Right away",    defaultMsg: "Welcome to {{business_name}} 👋 Reply MENU to see what we have today!" },
-  { id: "offer_expiry",   emoji: "⏰", label: "An offer is about to expire",          desc: "Remind them before it's gone",         when: "24 hrs before", defaultMsg: "⏰ Don't miss out! Your offer at {{business_name}} expires tomorrow." },
-  { id: "comeback",       emoji: "💚", label: "A customer hasn't ordered in a while", desc: "Win them back with a nudge",           when: "Daily check",   defaultMsg: "Hi {{customer_name}}, we miss you! Come back and get 10% off your next order 🎉" },
+  { id: "order_placed",   emoji: "📦", label: "Someone places an order",              desc: "Send a confirmation right away",       when: "Right away",    recommendedDelay: "immediate" },
+  { id: "abandoned_cart", emoji: "🛒", label: "Someone leaves their cart",            desc: "Remind them 1 hour later",             when: "After 1 hour",  recommendedDelay: "1h" },
+  { id: "delivered",      emoji: "⭐", label: "An order is delivered",                desc: "Ask for a rating 3 hours later",       when: "After 3 hours", recommendedDelay: "3h" },
+  { id: "welcome",        emoji: "👋", label: "A new customer messages me",           desc: "Welcome them straight away",           when: "Right away",    recommendedDelay: "immediate" },
+  { id: "offer_expiry",   emoji: "⏰", label: "An offer is about to expire",          desc: "Remind them before it's gone",         when: "24 hrs before", recommendedDelay: "24h" },
+  { id: "comeback",       emoji: "💚", label: "A customer hasn't ordered in a while", desc: "Win them back with a nudge",           when: "Daily check",   recommendedDelay: "24h" },
 ];
 
-const TRIGGER_DELAYS = [
-  { id: "immediate", emoji: "⚡", label: "Right away",      desc: "Best for order confirmations and welcomes" },
-  { id: "1h",        emoji: "🕐", label: "After 1 hour",   desc: "Best for cart recovery — gives them time but not too long" },
-  { id: "3h",        emoji: "🕒", label: "After 3 hours",  desc: "Best for post-delivery feedback" },
-  { id: "24h",       emoji: "🕛", label: "After 24 hours", desc: "Best for daily win-back checks" },
-];
-
-// Industry-recommended follow-up windows for WhatsApp marketing.
-// Day 2 → Day 5 → Day 10 is the proven sweet spot:
-// close enough to stay relevant, far enough not to feel spammy.
-const FOLLOWUP_DELAYS = [
-  { id: "2",  label: "2 days later",  recommended: true  },
-  { id: "3",  label: "3 days later",  recommended: false },
-  { id: "5",  label: "5 days later",  recommended: true  },
-  { id: "7",  label: "7 days later",  recommended: false },
-  { id: "10", label: "10 days later", recommended: true  },
-  { id: "14", label: "14 days later", recommended: false },
-];
-
-// Pre-filled follow-up templates per context.
-// Index = which follow-up (0 = first, 1 = second, 2 = third).
-const CAMPAIGN_FOLLOWUPS: Record<string, { delay: string; message: string }[]> = {
-  s1: [ // Everyone
-    { delay: "2",  message: "Hi {{customer_name}} 👋 Just a quick reminder — our offer at {{business_name}} is still open. Have you had a chance to check it out?" },
-    { delay: "5",  message: "{{customer_name}}, this is your last reminder 🔔 We'd hate for you to miss out. Reply now or visit us to grab this before it's gone." },
-    { delay: "10", message: "Final message from us 💚 We'll leave you be after this — but we'd love to see you again at {{business_name}}. Here's 10% off if you come back." },
-  ],
-  s3: [ // Recent buyers
-    { delay: "2",  message: "Hey {{customer_name}}! Loved having you recently 🙌 Just wanted to make sure you saw our latest offer — we think you'll love it." },
-    { delay: "5",  message: "{{customer_name}}, still thinking it over? Your spot is waiting at {{business_name}} 😊 Reply YES and we'll sort you out right away." },
-    { delay: "10", message: "One last nudge! 🎉 We appreciate your loyalty — here's something special just for coming back. Reply to claim it." },
-  ],
-  s2: [ // Best customers (3+ orders)
-    { delay: "2",  message: "Hi {{customer_name}} — as one of our regulars, we wanted to make sure you saw this first 🙏 Don't miss out, it's going fast." },
-    { delay: "5",  message: "{{customer_name}}, you've always been a great customer 💚 We saved something for you — just reply and we'll take care of the rest." },
-    { delay: "10", message: "Last call, {{customer_name}} 🔔 We rarely do this, but here's an exclusive extra 10% just for loyal customers like you. Valid this week only." },
-  ],
-  s6: [ // Customers I miss (60d+ dormant)
-    { delay: "3",  message: "Hi {{customer_name}}, it's been a while and we genuinely miss you 💚 A lot has changed at {{business_name}} — come see what's new!" },
-    { delay: "7",  message: "{{customer_name}}, we know life gets busy 😊 We'd love to welcome you back. Reply YES and we'll hold something aside for you." },
-    { delay: "14", message: "Last one from us, {{customer_name}} 🙏 We'll stop after this. But if you ever want to come back, {{business_name}} will be here for you." },
-  ],
-  s5: [ // Almost lost (21–60d)
-    { delay: "2",  message: "Hey {{customer_name}} 👋 We noticed it's been a little while — we'd love to see you back at {{business_name}}. Anything we can help with?" },
-    { delay: "5",  message: "{{customer_name}}, we've missed having you! 🙌 Here's a little something to make coming back worth your while — just reply to claim it." },
-    { delay: "10", message: "Final message, {{customer_name}} 💬 We're here whenever you're ready. Reply anytime and we'll take care of you at {{business_name}}." },
-  ],
-  s4: [ // VIP only
-    { delay: "2",  message: "Hi {{customer_name}} 👑 As a VIP customer, you get first access. We just wanted to make sure this didn't slip past you — reply to secure yours." },
-    { delay: "5",  message: "{{customer_name}}, this one's just for our top customers 💎 We've reserved something exclusive. Don't let it go to someone else!" },
-    { delay: "10", message: "Final VIP reminder, {{customer_name}} ✨ We'll close this after today. Reply now and we'll make it worth the wait — promise." },
-  ],
+const TRIGGER_DELAY_LABELS: Record<string, string> = {
+  immediate: "Right away",
+  "1h": "After 1 hour",
+  "3h": "After 3 hours",
+  "24h": "After 24 hours",
 };
 
-const TRIGGER_FOLLOWUPS: Record<string, { delay: string; message: string }[]> = {
-  abandoned_cart: [
-    { delay: "2",  message: "Hi {{customer_name}} 👋 Still thinking it over? Your items are still in your cart at {{business_name}} — tap to complete your order before they sell out." },
-    { delay: "5",  message: "Last chance, {{customer_name}} 🛒 Your cart is about to expire. Complete your order now and we'll throw in a little extra for you." },
-  ],
-  order_placed: [
-    { delay: "3",  message: "Hi {{customer_name}} 😊 Hope you enjoyed your order! We'd love to have you back — reply MENU to see what's fresh this week at {{business_name}}." },
-    { delay: "7",  message: "{{customer_name}}, it's been a week! 🍽 Ready for another order? Reply and we'll make it quick and easy for you." },
-  ],
-  delivered: [
-    { delay: "3",  message: "Hi {{customer_name}} — did you get a chance to rate your order? 🌟 Your feedback really helps us improve. Just reply 1–5 when you're ready." },
-    { delay: "7",  message: "Hey {{customer_name}} 👋 Just checking in! Ready for your next order at {{business_name}}? Reply MENU and we'll get started." },
-  ],
-  welcome: [
-    { delay: "2",  message: "Hi {{customer_name}}! 🌟 Did you get a chance to check our menu? Reply MENU anytime and we'll show you what's available at {{business_name}} today." },
-    { delay: "5",  message: "{{customer_name}}, first order is always special 🎉 We'd love to serve you. Reply ORDER and we'll guide you through it step by step." },
-  ],
-  offer_expiry: [
-    { delay: "2",  message: "{{customer_name}}, your offer at {{business_name}} is about to expire! ⏰ Don't lose it — tap here to use it before it's gone." },
-  ],
-  comeback: [
-    { delay: "5",  message: "Hey {{customer_name}} 💚 Still here for you at {{business_name}}! Here's 15% off your next order — just reply YES to claim it." },
-    { delay: "10", message: "Final message from us, {{customer_name}} 🙏 We hope to see you again soon. Your exclusive 15% off expires today." },
-  ],
+/**
+ * Recommended follow-up delays — fixed per mode, not user-editable.
+ *
+ * Templates can override with their own `followUp.delay`. Otherwise we ship
+ * the proven defaults: 2 days for broadcasts (close enough to stay relevant,
+ * far enough not to feel spammy), 3 hours for triggers (event-driven loops
+ * are tighter than merchant broadcasts).
+ */
+const DEFAULT_FOLLOWUP_DELAY: Record<"campaign" | "trigger", string> = {
+  campaign: "2",
+  trigger: "3h",
 };
+
+const FOLLOWUP_LABELS: Record<string, string> = {
+  "1h": "1 hour later",
+  "3h": "3 hours later",
+  "1": "1 day later",
+  "2": "2 days later",
+  "3": "3 days later",
+  "5": "5 days later",
+  "7": "7 days later",
+  "10": "10 days later",
+  "14": "14 days later",
+};
+
+const followUpLabel = (delay: string) =>
+  FOLLOWUP_LABELS[delay] ?? `${delay} later`;
 
 const VARS = [
   { token: "{{customer_name}}", label: "Customer name" },
   { token: "{{business_name}}", label: "Business name" },
+  { token: "{{menu_link}}",     label: "Menu link" },
   { token: "{{order_id}}",      label: "Order number" },
 ];
 
 /* ─── Types ──────────────────────────────────────────────────── */
-type Mode     = "campaign" | "trigger" | null;
-type WhenOpt  = "now" | "later";
-interface FollowUp { delay: string; message: string; }
+type Mode    = "campaign" | "trigger" | null;
+type WhenOpt = "now" | "later";
 
 /* ─── Shared UI pieces ───────────────────────────────────────── */
 function StepBar({ current, total }: { current: number; total: number }) {
@@ -203,9 +165,19 @@ function Guard({ label }: { label: string }) {
 }
 
 /* ─── Wizard ─────────────────────────────────────────────────── */
-const TOTAL_STEPS = 6;
+// Broadcasts walk through 5 steps (mode → audience → message → follow-up →
+// when → review = 6 internal steps numbered 1..6). Triggered automations skip
+// the follow-up and delay steps — the system picks the recommended timing —
+// so the user only sees 4 visible steps. Internal step numbers stay the same
+// for routing simplicity; mapInternalToVisible bridges the two.
+const TOTAL_STEPS_BY_MODE = { campaign: 6, trigger: 4 } as const;
 
-const NewCampaign = () => {
+const VISIBLE_STEP_BY_INTERNAL: Record<"campaign" | "trigger", Record<number, number>> = {
+  campaign: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6 },
+  trigger:  { 1: 1, 2: 2, 3: 3, 6: 4 },
+};
+
+const NewAutomation = () => {
   const nav = useNavigate();
 
   const [step,         setStep]         = useState(1);
@@ -213,50 +185,72 @@ const NewCampaign = () => {
   const [audienceId,   setAudienceId]   = useState<string | null>(null);
   const [triggerId,    setTriggerId]    = useState<string | null>(null);
   const [message,      setMessage]      = useState("");
-  const [followUps,    setFollowUps]    = useState<FollowUp[]>([]);
+  const [followUpMsg,  setFollowUpMsg]  = useState("");
+  const [followUpDelay, setFollowUpDelay] = useState<string>(
+    DEFAULT_FOLLOWUP_DELAY.campaign,
+  );
   const [when,         setWhen]         = useState<WhenOpt>("now");
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
-  const [triggerDelay, setTriggerDelay] = useState("immediate");
-  const [campaignName, setCampaignName] = useState("");
+  const [automationName, setAutomationName] = useState("");
+  // Note: triggered automations don't expose a delay picker — the system uses
+  // each trigger's industry-recommended delay (TRIGGERS[].recommendedDelay).
+
+  // Visible step + total are mode-aware. Trigger mode collapses follow-up and
+  // delay so the StepBar shows 4 steps, not 6.
+  const visibleTotal = mode ? TOTAL_STEPS_BY_MODE[mode] : 6;
+  const visibleStep = mode
+    ? VISIBLE_STEP_BY_INTERNAL[mode][step] ?? step
+    : step;
 
   const selectedAudience = segments.find(a => a.id === audienceId);
   const selectedTrigger  = TRIGGERS.find(t => t.id === triggerId);
 
+  const merchantCategory = useMemo(
+    () => categoryFromLabel(identity.category),
+    [],
+  );
+
+  // Picking a mode resets the follow-up delay to that mode's default so the
+  // read-only badge on the follow-up step always matches the current mode.
+  const pickMode = (m: Mode) => {
+    setMode(m);
+    if (m) setFollowUpDelay(DEFAULT_FOLLOWUP_DELAY[m]);
+  };
+
+  // Loading a template overwrites both messages + the follow-up delay so the
+  // merchant sees fresh, relevant copy whenever they change context. They can
+  // still edit the textarea after.
+  const loadTemplate = (t: MessageTemplate | null) => {
+    if (!t) return;
+    setMessage(t.initial);
+    setFollowUpMsg(t.followUp.message);
+    setFollowUpDelay(t.followUp.delay);
+  };
+
   const pickAudience = (id: string) => {
     setAudienceId(id);
-    if (!message) setMessage(`Hi {{customer_name}}! 👋 We have something special for you at ${business.name} this week.`);
+    loadTemplate(templateFor(merchantCategory, "campaign", id));
   };
 
   const pickTrigger = (id: string) => {
     setTriggerId(id);
-    const t = TRIGGERS.find(x => x.id === id);
-    if (t && !message) setMessage(t.defaultMsg);
+    loadTemplate(templateFor(merchantCategory, "trigger", id));
   };
-
-  const addFollowUp = () => {
-    if (followUps.length >= 3) return;
-    const idx = followUps.length;
-    const pool = mode === "campaign"
-      ? (CAMPAIGN_FOLLOWUPS[audienceId ?? "s1"] ?? CAMPAIGN_FOLLOWUPS["s1"])
-      : (TRIGGER_FOLLOWUPS[triggerId ?? ""] ?? []);
-    const prefill = pool[idx] ?? { delay: FOLLOWUP_DELAYS[Math.min(idx * 2, FOLLOWUP_DELAYS.length - 1)].id, message: "" };
-    setFollowUps(f => [...f, prefill]);
-  };
-  const removeFollowUp = (i: number) => setFollowUps(f => f.filter((_, idx) => idx !== i));
-  const updateFollowUp = (i: number, patch: Partial<FollowUp>) =>
-    setFollowUps(f => f.map((x, idx) => idx === i ? { ...x, ...patch } : x));
 
   const resolve = (txt: string) => txt
     .replace(/\{\{customer_name\}\}/g, "Adaeze")
     .replace(/\{\{business_name\}\}/g, business.name)
+    .replace(/\{\{menu_link\}\}/g, `nativeid.io/${business.handle}`)
     .replace(/\{\{order_id\}\}/g, "#4821");
 
   const handleLaunch = () => {
     const verb = mode === "trigger" ? "activated" : when === "now" ? "sent" : "scheduled";
-    toast.success(`🎉 Your message has been ${verb}!`);
-    nav("/campaigns");
+    toast.success(`🎉 Your automation has been ${verb}!`);
+    nav("/automations");
   };
+
+  const followUpDelayLabel = followUpLabel(followUpDelay);
 
   /* ════════════════════════════════════════════
      STEP 1 — What do you want to do?
@@ -264,19 +258,21 @@ const NewCampaign = () => {
   if (step === 1) return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-4">
-        <Link to="/campaigns" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to campaigns
+        <Link to="/automations" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to automations
         </Link>
-        <StepBar current={1} total={TOTAL_STEPS} />
+        <StepBar current={visibleStep} total={visibleTotal} />
         <h1 className="font-display text-2xl font-bold mb-1">What do you want to do?</h1>
-        <p className="text-muted-foreground text-sm mb-6">Pick one — you can always change it later.</p>
+        <p className="text-muted-foreground text-sm mb-6">
+          Every automation sends a first message plus one follow-up — no more, no less.
+        </p>
         <div className="space-y-3">
-          <OptionCard emoji="📢" label="Send a message to my customers"
-            desc="You write the message, choose who gets it, and decide when. Great for announcements, offers, and promotions."
-            selected={mode === "campaign"} onClick={() => setMode("campaign")} />
-          <OptionCard emoji="⚡" label="Set up an automatic message"
-            desc="The message sends itself whenever something happens — like when a customer orders or leaves their cart. Set it once and it runs forever."
-            selected={mode === "trigger"} onClick={() => setMode("trigger")} />
+          <OptionCard emoji="📢" label="Broadcast to customers"
+            desc="You write the message, choose who gets it, and decide when. Great for announcements, offers, and weekly updates."
+            selected={mode === "campaign"} onClick={() => pickMode("campaign")} />
+          <OptionCard emoji="⚡" label="Automatic message on an event"
+            desc="The message sends itself whenever something happens — like when a customer orders or leaves their cart. Set it once, it runs forever."
+            selected={mode === "trigger"} onClick={() => pickMode("trigger")} />
         </div>
         <Nav onNext={() => setStep(2)} nextDisabled={!mode} nextLabel="Next" />
       </div>
@@ -284,12 +280,12 @@ const NewCampaign = () => {
   );
 
   /* ════════════════════════════════════════════
-     STEP 2a (Campaign) — Who gets it?
+     STEP 2a (Broadcast) — Who gets it?
   ════════════════════════════════════════════ */
   if (step === 2 && mode === "campaign") return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-4">
-        <StepBar current={2} total={TOTAL_STEPS} />
+        <StepBar current={visibleStep} total={visibleTotal} />
         <h1 className="font-display text-2xl font-bold mb-1">Who should get the message?</h1>
         <p className="text-muted-foreground text-sm mb-6">You can only message customers who agreed to hear from you.</p>
         <div className="space-y-3">
@@ -310,7 +306,7 @@ const NewCampaign = () => {
   if (step === 2 && mode === "trigger") return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-4">
-        <StepBar current={2} total={TOTAL_STEPS} />
+        <StepBar current={visibleStep} total={visibleTotal} />
         <h1 className="font-display text-2xl font-bold mb-1">When should it send?</h1>
         <p className="text-muted-foreground text-sm mb-6">Pick the moment that should trigger your message.</p>
         <div className="space-y-3">
@@ -326,21 +322,23 @@ const NewCampaign = () => {
   );
 
   /* ════════════════════════════════════════════
-     STEP 3 — Write your message
+     STEP 3 — Write your first message
   ════════════════════════════════════════════ */
   if (step === 3) return (
     <AppLayout>
       <div className="max-w-2xl mx-auto py-4">
-        <StepBar current={3} total={TOTAL_STEPS} />
-        <h1 className="font-display text-2xl font-bold mb-1">Write your message</h1>
+        <StepBar current={visibleStep} total={visibleTotal} />
+        <h1 className="font-display text-2xl font-bold mb-1">Write your first message</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          Keep it short and friendly. We've filled in a starting point — just edit it to sound like you.
+          We've pre-filled a starter based on your{" "}
+          {mode === "campaign" ? "audience" : "trigger"}. Edit it to sound like you,
+          or replace it entirely.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Editor */}
           <div>
-            <Textarea value={message} onChange={e => setMessage(e.target.value)}
+            <Textarea value={message} onChange={e => { setMessage(e.target.value); }}
               rows={8} maxLength={1024} placeholder="Type your message here…"
               className="rounded-xl text-sm leading-relaxed resize-none" />
             <span className="text-[11px] text-muted-foreground mt-1.5 block">{message.length} / 1024</span>
@@ -383,98 +381,82 @@ const NewCampaign = () => {
           </div>
         </div>
 
-        <Nav onBack={() => setStep(2)} onNext={() => setStep(4)} nextDisabled={message.trim().length < 5} />
+        <Nav
+          onBack={() => setStep(2)}
+          onNext={() => setStep(mode === "trigger" ? 6 : 4)}
+          nextDisabled={message.trim().length < 5}
+          nextLabel={mode === "trigger" ? "Review" : "Continue"}
+        />
       </div>
     </AppLayout>
   );
 
   /* ════════════════════════════════════════════
-     STEP 4 — Follow-up messages
+     STEP 4 — Your follow-up (always exactly one)
   ════════════════════════════════════════════ */
   if (step === 4) return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-4">
-        <StepBar current={4} total={TOTAL_STEPS} />
-        <h1 className="font-display text-2xl font-bold mb-1">Want to add follow-ups?</h1>
+        <StepBar current={visibleStep} total={visibleTotal} />
+        <h1 className="font-display text-2xl font-bold mb-1">Your one follow-up</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          Follow-ups are extra messages that send automatically to customers who didn't respond to your first message.
-          You can add up to 3. <span className="text-primary font-medium">This step is optional</span> — tap Continue to skip.
+          Every automation sends exactly one follow-up to customers who don't respond to the first message.
+          We send it at the recommended time — you only need to choose what it says.
         </p>
 
-        {/* Existing follow-ups */}
         <div className="space-y-4 mb-4">
           {/* First message — read-only summary */}
           <div className="rounded-2xl border border-border bg-card p-4 flex items-start gap-3">
             <span className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shrink-0">1</span>
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-muted-foreground font-medium mb-1">First message · sends {mode === "trigger" ? "on event" : when === "now" ? "right away" : "at scheduled time"}</div>
-              <p className="text-sm text-foreground/80 line-clamp-2 whitespace-pre-wrap">{resolve(message)}</p>
+              <div className="text-xs text-muted-foreground font-medium mb-1">
+                First message · sends {mode === "trigger" ? "on event" : when === "now" ? "right away" : "at scheduled time"}
+              </div>
+              <p className="text-sm text-foreground/80 line-clamp-3 whitespace-pre-wrap">{resolve(message)}</p>
             </div>
           </div>
 
-          {/* Follow-up cards */}
-          {followUps.map((fu, i) => (
-            <div key={i} className="rounded-2xl border border-border bg-muted/20 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center">
-                    {i + 2}
-                  </span>
-                  <span className="text-sm font-semibold">Follow-up {i + 1}</span>
-                </div>
-                <button type="button" title="Remove follow-up" onClick={() => removeFollowUp(i)}
-                  className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-muted-foreground mb-2">Send this…</p>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {FOLLOWUP_DELAYS.map(d => (
-                  <button type="button" key={d.id} onClick={() => updateFollowUp(i, { delay: d.id })}
-                    className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition-colors inline-flex items-center gap-1 ${
-                      fu.delay === d.id
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border text-muted-foreground hover:border-primary/40"}`}>
-                    {d.label}
-                    {d.recommended && fu.delay !== d.id && (
-                      <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1 rounded">✓ recommended</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              <Textarea value={fu.message} onChange={e => updateFollowUp(i, { message: e.target.value })}
-                rows={3} maxLength={1024} placeholder="Write your follow-up here…"
-                className="rounded-xl text-sm leading-relaxed resize-none" />
-              <p className="text-[11px] text-muted-foreground mt-1.5">
-                Only sent to customers who haven't responded to the previous message.
-              </p>
+          {/* Follow-up card */}
+          <div className="rounded-2xl border border-border bg-muted/20 p-4">
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="h-7 w-7 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center">2</span>
+              <span className="text-sm font-semibold">Follow-up</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Only if no reply</span>
             </div>
-          ))}
+
+            <div className="mb-3 inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-primary">
+              <Clock className="h-3.5 w-3.5" />
+              <span className="font-semibold">Sends {followUpDelayLabel}</span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
+                ✓ recommended
+              </span>
+            </div>
+
+            <Textarea value={followUpMsg} onChange={e => setFollowUpMsg(e.target.value)}
+              rows={4} maxLength={1024} placeholder="Write your follow-up here…"
+              className="rounded-xl text-sm leading-relaxed resize-none" />
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              Only sent to customers who didn't respond to the first message. After this, the conversation closes.
+            </p>
+          </div>
         </div>
 
-        {/* Add follow-up button */}
-        {followUps.length < 3 && (
-          <button type="button" onClick={addFollowUp}
-            className="w-full py-3 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-accent/30 transition-all flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary font-medium">
-            <Plus className="h-4 w-4" /> Add a follow-up message
-          </button>
-        )}
-
-        <Nav onBack={() => setStep(3)} onNext={() => setStep(5)}
-          nextLabel={followUps.length > 0 ? "Continue" : "Skip — no follow-ups"} />
+        <Nav
+          onBack={() => setStep(3)}
+          onNext={() => setStep(5)}
+          nextDisabled={followUpMsg.trim().length < 5}
+        />
       </div>
     </AppLayout>
   );
 
   /* ════════════════════════════════════════════
-     STEP 5a (Campaign) — When to send
+     STEP 5a (Broadcast) — When to send
   ════════════════════════════════════════════ */
   if (step === 5 && mode === "campaign") return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-4">
-        <StepBar current={5} total={TOTAL_STEPS} />
+        <StepBar current={visibleStep} total={visibleTotal} />
         <h1 className="font-display text-2xl font-bold mb-1">When do you want to send it?</h1>
         <p className="text-muted-foreground text-sm mb-6">
           Your message will go to <b>{selectedAudience?.count.toLocaleString()}</b> customers.
@@ -505,7 +487,7 @@ const NewCampaign = () => {
           <label className="text-sm font-medium block mb-1.5">
             Give this a name <span className="text-muted-foreground font-normal">(optional)</span>
           </label>
-          <Input value={campaignName} onChange={e => setCampaignName(e.target.value)}
+          <Input value={automationName} onChange={e => setAutomationName(e.target.value)}
             placeholder="e.g. Weekend promo, Lunch offer…" className="rounded-xl" />
           <p className="text-[11px] text-muted-foreground mt-1">Only you see this — just to help you find it later.</p>
         </div>
@@ -517,41 +499,18 @@ const NewCampaign = () => {
   );
 
   /* ════════════════════════════════════════════
-     STEP 5b (Trigger) — Delay after event
-  ════════════════════════════════════════════ */
-  if (step === 5 && mode === "trigger") return (
-    <AppLayout>
-      <div className="max-w-xl mx-auto py-4">
-        <StepBar current={5} total={TOTAL_STEPS} />
-        <h1 className="font-display text-2xl font-bold mb-1">How long after it happens?</h1>
-        <p className="text-muted-foreground text-sm mb-6">
-          Choose when the first message should arrive after <b>{selectedTrigger?.label.toLowerCase()}</b>.
-        </p>
-        <div className="space-y-3">
-          {TRIGGER_DELAYS.map(d => (
-            <OptionCard key={d.id} emoji={d.emoji} label={d.label} desc={d.desc}
-              selected={triggerDelay === d.id} onClick={() => setTriggerDelay(d.id)} />
-          ))}
-        </div>
-        <Nav onBack={() => setStep(4)} onNext={() => setStep(6)} />
-      </div>
-    </AppLayout>
-  );
-
-  /* ════════════════════════════════════════════
      STEP 6 — Review & launch
   ════════════════════════════════════════════ */
   if (step === 6) return (
     <AppLayout>
       <div className="max-w-xl mx-auto py-4">
-        <StepBar current={6} total={TOTAL_STEPS} />
+        <StepBar current={visibleStep} total={visibleTotal} />
         <h1 className="font-display text-2xl font-bold mb-1">Ready to go! 🎉</h1>
         <p className="text-muted-foreground text-sm mb-6">Check everything below, then hit launch.</p>
 
-        {/* Summary */}
         <div className="surface-card p-5 mb-5 space-y-4">
           <SummaryRow icon={mode === "campaign" ? "📢" : "⚡"} label="Type"
-            value={mode === "campaign" ? "Send to customers" : "Automatic message"} />
+            value={mode === "campaign" ? "Broadcast to customers" : "Automatic on event"} />
           {mode === "campaign" && selectedAudience && (
             <SummaryRow icon={selectedAudience.emoji} label="Who gets it"
               value={`${selectedAudience.name} — ${selectedAudience.count.toLocaleString()} customers`} />
@@ -563,15 +522,15 @@ const NewCampaign = () => {
             <SummaryRow icon={when === "now" ? "🚀" : "🗓"} label="Sends"
               value={when === "now" ? "Right now" : `${scheduleDate} at ${scheduleTime}`} />
           )}
-          {mode === "trigger" && (
-            <SummaryRow icon="⏱" label="Delay"
-              value={TRIGGER_DELAYS.find(d => d.id === triggerDelay)?.label ?? triggerDelay} />
+          {mode === "trigger" && selectedTrigger && (
+            <SummaryRow icon="⏱" label="Sends"
+              value={`${TRIGGER_DELAY_LABELS[selectedTrigger.recommendedDelay] ?? selectedTrigger.recommendedDelay} · industry-recommended`} />
           )}
-          {followUps.length > 0 && (
-            <SummaryRow icon="💬" label="Follow-ups"
-              value={`${followUps.length} follow-up${followUps.length > 1 ? "s" : ""} — only if no response`} />
+          {mode === "campaign" && (
+            <SummaryRow icon="💬" label="Follow-up"
+              value={`${followUpDelayLabel} — only if no response`} />
           )}
-          {campaignName && <SummaryRow icon="🏷" label="Name" value={campaignName} />}
+          {automationName && <SummaryRow icon="🏷" label="Name" value={automationName} />}
         </div>
 
         {/* Full message thread preview */}
@@ -585,24 +544,29 @@ const NewCampaign = () => {
               <p className="text-[13px] text-gray-800 leading-snug whitespace-pre-wrap">{resolve(message)}</p>
               <div className="text-[10px] text-gray-400 text-right mt-2">10:00 ✓✓</div>
             </div>
-            {followUps.filter(fu => fu.message.trim()).map((fu, i) => (
-              <div key={i}>
+            {mode === "campaign" && (
+              <div>
                 <div className="text-[9px] text-center text-gray-500 my-1">
-                  {FOLLOWUP_DELAYS.find(d => d.id === fu.delay)?.label} · if no response
+                  {followUpDelayLabel} · if no response
                 </div>
                 <div className="bg-white rounded-2xl rounded-tl-sm p-3 max-w-[90%] shadow-sm ml-2">
-                  <p className="text-[12px] text-gray-800 leading-snug whitespace-pre-wrap">{resolve(fu.message)}</p>
+                  <p className="text-[12px] text-gray-800 leading-snug whitespace-pre-wrap">{resolve(followUpMsg)}</p>
                   <div className="text-[10px] text-gray-400 text-right mt-1">✓✓</div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
         {/* Guardrails */}
         <div className="surface-card p-4 mb-6 space-y-2.5">
           <Guard label="Only opted-in customers will receive this" />
-          <Guard label="Max 2 automated messages per customer per day" />
+          {mode === "campaign" && (
+            <Guard label="Exactly one follow-up — no endless chase sequences" />
+          )}
+          {mode === "trigger" && (
+            <Guard label="Sends at the industry-recommended time — no spam" />
+          )}
           <Guard label="Anyone who replies STOP is removed immediately" />
         </div>
 
@@ -610,9 +574,9 @@ const NewCampaign = () => {
           <Button type="button" onClick={handleLaunch}
             className="h-12 rounded-xl grad-primary text-primary-foreground border-0 shadow-[var(--shadow-glow)] text-base font-bold gap-2">
             <Sparkles className="h-5 w-5" />
-            {mode === "trigger" ? "Activate auto-message" : when === "now" ? "Send now" : "Schedule"}
+            {mode === "trigger" ? "Activate automation" : when === "now" ? "Send now" : "Schedule"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => setStep(5)} className="rounded-xl">
+          <Button type="button" variant="outline" onClick={() => setStep(mode === "trigger" ? 3 : 5)} className="rounded-xl">
             <ArrowLeft className="h-4 w-4 mr-1.5" /> Go back and edit
           </Button>
         </div>
@@ -623,4 +587,4 @@ const NewCampaign = () => {
   return null;
 };
 
-export default NewCampaign;
+export default NewAutomation;

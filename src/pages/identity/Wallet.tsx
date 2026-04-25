@@ -96,7 +96,7 @@ const Wallet = () => {
           <div className="surface-card p-5">
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-2">Why this matters</div>
             <p className="text-[12px] text-muted-foreground leading-relaxed">
-              The wallet builds a portable trust history. The more verified transactions a customer logs, the higher their own trust signal becomes — useful for lenders, marketplaces, and escrow providers.
+              The wallet builds a portable trust history. The more verified transactions a customer logs, the higher their own trust signal becomes — useful for lenders, marketplaces, and KYC-lite APIs.
             </p>
           </div>
         </div>

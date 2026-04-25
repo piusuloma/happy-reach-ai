@@ -40,7 +40,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex-1 max-w-md mx-auto hidden lg:block">
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search campaigns, contacts, identity…" className="pl-9 bg-muted/50 border-0 h-10 rounded-xl" />
+                <Input placeholder="Search automations, contacts, identity…" className="pl-9 bg-muted/50 border-0 h-10 rounded-xl" />
               </div>
             </div>
             <div className="ml-auto flex items-center gap-2">

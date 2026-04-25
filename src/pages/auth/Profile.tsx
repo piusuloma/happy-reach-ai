@@ -68,7 +68,7 @@ const Profile = () => {
             Tier 1 badge unlocks immediately
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
-            Add CAC and a utility bill later to unlock higher escrow limits and the full Verified badge.
+            Add CAC, NIN and a utility bill later to unlock the full Verified badge and anti-impersonation monitoring.
           </p>
         </div>
 

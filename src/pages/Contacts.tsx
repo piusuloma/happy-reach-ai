@@ -19,7 +19,7 @@ const Contacts = () => {
             <h3 className="font-display font-bold">Segments</h3>
           </div>
           <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
-            These are the same audiences you pick when creating a campaign.
+            These are the same audiences you pick when creating an automation.
           </p>
           <ul className="space-y-1">
             {segments.map(s => (

@@ -4,8 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "./pages/NotFound";
-import Campaigns from "./pages/Campaigns";
-import NewCampaign from "./pages/NewCampaign";
+import Automations from "./pages/Automations";
+import NewAutomation from "./pages/NewAutomation";
 import Contacts from "./pages/Contacts";
 import Flows from "./pages/Flows";
 import Inbox from "./pages/Inbox";
@@ -52,12 +52,15 @@ const App = () => (
           <Route path="/sso/demo" element={<SsoDemo />} />
 
           {/* Merchant app — gated by mobile-OTP login */}
-          <Route path="/" element={<Navigate to="/campaigns" replace />} />
+          <Route path="/" element={<Navigate to="/automations" replace />} />
           <Route path="/identity" element={<RequireAuth><Identity /></RequireAuth>} />
           <Route path="/identity/verify" element={<RequireAuth><Verify /></RequireAuth>} />
           <Route path="/wallet" element={<RequireAuth><Wallet /></RequireAuth>} />
-          <Route path="/campaigns" element={<RequireAuth><Campaigns /></RequireAuth>} />
-          <Route path="/campaigns/new" element={<RequireAuth><NewCampaign /></RequireAuth>} />
+          <Route path="/automations" element={<RequireAuth><Automations /></RequireAuth>} />
+          <Route path="/automations/new" element={<RequireAuth><NewAutomation /></RequireAuth>} />
+          {/* Legacy redirects */}
+          <Route path="/campaigns" element={<Navigate to="/automations" replace />} />
+          <Route path="/campaigns/new" element={<Navigate to="/automations/new" replace />} />
           <Route path="/contacts" element={<RequireAuth><Contacts /></RequireAuth>} />
           <Route path="/flows" element={<RequireAuth><Flows /></RequireAuth>} />
           <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />

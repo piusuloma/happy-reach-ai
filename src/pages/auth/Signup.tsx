@@ -1,20 +1,30 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthShell } from "@/components/identity/AuthShell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2, MessageCircle, Smartphone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { sendOtp, normalizePhone, type Channel } from "@/lib/auth";
 
 const Signup = () => {
   const nav = useNavigate();
   const [phone, setPhone] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const valid = normalizePhone(phone).length >= 10;
 
+  // WhatsApp is the default delivery channel. The OTP screen surfaces an SMS
+  // fallback after 45s if the message hasn't arrived — keep that decision
+  // off this screen so the form looks like every other phone-number sign-up.
   const go = (channel: Channel) => {
     if (!valid) return;
+    // Stash the marketing opt-in so the account record can carry it forward
+    // when ensureAccount runs after OTP verification.
+    sessionStorage.setItem(
+      "nativeid_marketing_opt_in",
+      marketingOptIn ? "1" : "0",
+    );
     const state = sendOtp(phone, channel, "signup");
     toast.success(
       channel === "sms"
@@ -29,22 +39,22 @@ const Signup = () => {
   return (
     <AuthShell
       step={{ current: 1, total: 4 }}
-      title="Create your NativeID"
-      subtitle="Verify your number, pick a password, and you're in. Takes under a minute."
+      title="Create your account"
+      subtitle="Enter your phone number to get started."
     >
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          go("sms");
+          go("whatsapp");
         }}
-        className="space-y-4"
+        className="space-y-5"
       >
         <div>
           <Label
             htmlFor="phone"
             className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
           >
-            Mobile number
+            Phone number
           </Label>
           <div className="mt-1.5 flex items-center rounded-xl border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-ring">
             <span className="pl-3.5 pr-2 text-sm text-muted-foreground border-r border-border h-12 flex items-center font-medium">
@@ -63,63 +73,50 @@ const Signup = () => {
           </div>
         </div>
 
-        <ul className="space-y-2.5 pt-1">
-          {[
-            "We'll send a 6-digit code via SMS (or WhatsApp)",
-            "Then you'll create a password for faster sign-in",
-            "Tier 1 verified badge issued immediately",
-          ].map((t) => (
-            <li
-              key={t}
-              className="flex items-start gap-2 text-sm text-muted-foreground"
-            >
-              <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-              {t}
-            </li>
-          ))}
-        </ul>
+        <label
+          htmlFor="marketing-opt-in"
+          className="flex items-start gap-2.5 cursor-pointer select-none"
+        >
+          <Checkbox
+            id="marketing-opt-in"
+            checked={marketingOptIn}
+            onCheckedChange={(c) => setMarketingOptIn(c === true)}
+            className="mt-0.5"
+          />
+          <span className="text-[12px] text-muted-foreground leading-relaxed">
+            Send me product updates and tips from NativeID. Unsubscribe any
+            time.
+          </span>
+        </label>
 
         <Button
           type="submit"
           disabled={!valid}
           className="w-full h-12 rounded-xl grad-primary text-primary-foreground border-0 shadow-[var(--shadow-glow)] text-[15px]"
         >
-          <Smartphone className="h-4 w-4" />
-          Send code via SMS
+          Continue
           <ArrowRight className="h-4 w-4" />
         </Button>
 
-        <div className="flex items-center gap-3 py-1">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            or
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!valid}
-          onClick={() => go("whatsapp")}
-          className="w-full h-12 rounded-xl border-[#25D366]/40 text-[#128C7E] hover:bg-[#25D366]/10 hover:text-[#128C7E] text-[15px]"
-        >
-          <MessageCircle className="h-4 w-4" />
-          Continue with WhatsApp
-        </Button>
-
-        <p className="text-[11px] text-center text-muted-foreground leading-relaxed pt-1">
-          By continuing you agree to our Terms and Privacy Policy. Message rates
-          may apply.
+        <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+          By continuing you agree to our{" "}
+          <Link to="#" className="underline hover:text-foreground">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link to="#" className="underline hover:text-foreground">
+            Privacy Policy
+          </Link>
+          . Message rates may apply.
         </p>
 
-        <p className="text-center text-xs text-muted-foreground pt-1">
+        <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link
             to="/auth/login"
             className="text-primary font-medium hover:underline"
           >
-            Log in
+            Sign in
           </Link>
         </p>
       </form>
