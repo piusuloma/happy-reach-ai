@@ -7,11 +7,8 @@ import {
   merchantSocials,
   merchantBio,
   merchantHours,
-  bandFor,
-  type Tier,
 } from "@/data/identity";
-import { VerifiedBadge } from "@/components/identity/VerifiedBadge";
-import { TrustScoreRing } from "@/components/identity/TrustScoreRing";
+import { TierTrustBadge } from "@/components/identity/TierTrustBadge";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -49,7 +46,6 @@ const socialIcon = (platform: string) => {
 const PublicProfile = () => {
   const { handle } = useParams();
   const businessHandle = handle || identity.handle;
-  const band = bandFor(identity.trustScore);
   const [tab, setTab] = useState<TabKey>("menu");
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
@@ -81,9 +77,13 @@ const PublicProfile = () => {
             <span className="mx-1">·</span>
             <span>{identity.category}</span>
           </div>
-          <div className="mt-3">
-            <VerifiedBadge tier={identity.tier} size="lg" />
-          </div>
+        </div>
+
+        {/* ── Tier trust badge — single composite that upgrades visually
+            with each tier earned. Carries the NativeID verified mark and
+            the merchant's live trust score. ── */}
+        <div className="px-4 mb-4">
+          <TierTrustBadge tier={identity.tier} trustScore={identity.trustScore} />
         </div>
 
         {/* ── Verification info — always visible ── */}
