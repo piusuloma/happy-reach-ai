@@ -8,8 +8,10 @@ import {
   merchantBio,
   merchantHours,
   bandFor,
+  type Tier,
 } from "@/data/identity";
 import { VerifiedBadge } from "@/components/identity/VerifiedBadge";
+import { TrustScoreRing } from "@/components/identity/TrustScoreRing";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
