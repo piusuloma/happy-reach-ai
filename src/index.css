@@ -99,6 +99,44 @@
   }
 }
 
+/* NativeID Restaurant OS — scoped theme. Wraps `.ros-scope` so semantic
+   tokens (primary / destructive / success / warning / muted etc.) resolve to
+   the operational teal palette inside ROS only. Identity + Automation are
+   untouched. */
+.ros-scope {
+  --background: 0 0% 100%;
+  --foreground: 60 4% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 60 4% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 60 4% 12%;
+
+  --primary: 168 75% 25%;            /* #0F6E56 teal */
+  --primary-foreground: 0 0% 100%;
+  --primary-glow: 168 65% 35%;
+
+  --secondary: 168 30% 95%;
+  --secondary-foreground: 168 75% 18%;
+  --muted: 60 5% 95%;
+  --muted-foreground: 60 4% 38%;
+  --accent: 168 50% 92%;
+  --accent-foreground: 168 75% 22%;
+
+  --success: 88 71% 25%;             /* #3B6D11 */
+  --success-foreground: 0 0% 100%;
+  --warning: 31 76% 41%;             /* #BA7517 */
+  --warning-foreground: 0 0% 100%;
+  --destructive: 0 56% 41%;          /* #A32D2D */
+  --destructive-foreground: 0 0% 100%;
+  --info: 210 90% 45%;
+  --info-foreground: 0 0% 100%;
+
+  --border: 60 5% 88%;
+  --input: 60 5% 88%;
+  --ring: 168 75% 25%;
+  --radius: 0.75rem;
+}
+
 @layer base {
   * { @apply border-border; }
   body {
