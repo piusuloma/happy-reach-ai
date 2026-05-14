@@ -26,6 +26,13 @@ import SetPassword from "./pages/auth/SetPassword";
 import Profile from "./pages/auth/Profile";
 import LinkMobile from "./pages/auth/LinkMobile";
 import { RequireAuth } from "./components/RequireAuth";
+import RosToday from "./pages/ros/Today";
+import RosInventory from "./pages/ros/Inventory";
+import RosVariances from "./pages/ros/Variances";
+import RosVarianceDetail from "./pages/ros/VarianceDetail";
+import RosCash from "./pages/ros/Cash";
+import RosStaff from "./pages/ros/Staff";
+import RosReports from "./pages/ros/Reports";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +75,18 @@ const App = () => (
           <Route path="/api" element={<RequireAuth><Api /></RequireAuth>} />
           <Route path="/shipment" element={<RequireAuth><Shipment /></RequireAuth>} />
           <Route path="/ai" element={<RequireAuth><Ai /></RequireAuth>} />
+          <Route path="/ai" element={<RequireAuth><Ai /></RequireAuth>} />
+
+          {/* Restaurant OS — separate module, own shell, own theme.
+              No coupling to Identity / Automation; reachable directly at /ros. */}
+          <Route path="/ros" element={<RosToday />} />
+          <Route path="/ros/inventory" element={<RosInventory />} />
+          <Route path="/ros/variances" element={<RosVariances />} />
+          <Route path="/ros/variances/:id" element={<RosVarianceDetail />} />
+          <Route path="/ros/cash" element={<RosCash />} />
+          <Route path="/ros/staff" element={<RosStaff />} />
+          <Route path="/ros/reports" element={<RosReports />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
